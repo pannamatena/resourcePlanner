@@ -1,42 +1,109 @@
 /** @jsxImportSource @emotion/react */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Link as LinkIcon, X, Calendar, RotateCcw, ExternalLink, Plus, Trash2, Pencil } from 'lucide-react'; // Added Pencil
+import { Link as LinkIcon, X, Calendar, ExternalLink, Plus, Trash2, Pencil } from 'lucide-react';
 import * as S from './Style';
 
-// --- Helpers ---
+// --- HELPERS ---
+
+// Format YYYY-MM-DD
+const toISODate = (date) => date.toISOString().split('T')[0];
+
 const formatDate = (date) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-const getDateStringFromIndex = (startDate, index) => {
-  const date = new Date(startDate);
-  date.setDate(date.getDate() + index);
-  return date.toISOString().split('T')[0];
+// Calculate Quarter based on Today
+const getCurrentQuarter = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-11
+
+  let startMonth, endMonth, endDay;
+
+  if (month <= 2) { // Q1: Jan - Mar
+    startMonth = 0; endMonth = 2; endDay = 31;
+  } else if (month <= 5) { // Q2: Apr - Jun
+    startMonth = 3; endMonth = 5; endDay = 30;
+  } else if (month <= 8) { // Q3: Jul - Sep
+    startMonth = 6; endMonth = 8; endDay = 30;
+  } else { // Q4: Oct - Dec
+    startMonth = 9; endMonth = 11; endDay = 31;
+  }
+
+  const start = new Date(year, startMonth, 1);
+  const end = new Date(year, endMonth, endDay);
+
+  return { start: toISODate(start), end: toISODate(end) };
 };
 
-const getIndexFromDateString = (startDate, dateString) => {
-  const target = new Date(dateString);
-  const start = new Date(startDate);
-  target.setHours(0,0,0,0);
-  start.setHours(0,0,0,0);
-  const diffTime = target - start;
+// Generate array of dates for the view
+const generateDateRange = (startStr, endStr) => {
+  const dates = [];
+  const start = new Date(startStr);
+  const end = new Date(endStr);
+
+  // Safety: Prevent huge loops
+  const diffTime = Math.abs(end - start);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  if (diffDays > 365 * 2) return { dates: [], totalDays: 0 }; // Limit to 2 years
+
+  const current = new Date(start);
+  while (current <= end) {
+    dates.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+  return { dates, totalDays: dates.length };
+};
+
+// ANCHOR DATE: Used for Sprint calculations and Task Storage
+// (Tasks are stored as "Days since Feb 5, 2026")
+const ANCHOR_DATE = new Date('2026-02-05T00:00:00');
+
+// Helper: Convert View Index -> Absolute Storage Index (vs Anchor)
+const getStorageIndexFromViewIndex = (viewStartDate, viewIndex) => {
+  const viewDate = new Date(viewStartDate);
+  viewDate.setDate(viewDate.getDate() + viewIndex);
+
+  const diffTime = viewDate.getTime() - ANCHOR_DATE.getTime();
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-const generateQuarterDates = () => {
-  const dates = [];
-  const anchorDate = new Date('2026-02-05T00:00:00');
-  const startDate = new Date(anchorDate);
-  startDate.setDate(anchorDate.getDate() - 14);
-  for (let i = 0; i < S.TOTAL_DAYS; i++) {
-    const current = new Date(startDate);
-    current.setDate(startDate.getDate() + i);
-    dates.push(current);
-  }
-  return { dates, startDate, anchorDate };
+// Helper: Convert Storage Index -> View Index (for displaying bars)
+const getViewIndexFromStorageIndex = (viewStartDate, storageIdx) => {
+  // Calculate Date of task start
+  const taskDate = new Date(ANCHOR_DATE);
+  taskDate.setDate(taskDate.getDate() + storageIdx);
+
+  // Calculate difference from View Start
+  const viewStart = new Date(viewStartDate);
+
+  // Reset hours
+  taskDate.setHours(0,0,0,0);
+  viewStart.setHours(0,0,0,0);
+
+  const diffTime = taskDate.getTime() - viewStart.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-// --- DATA ---
+// Helper: Convert Storage Index -> YYYY-MM-DD
+const getDateStringFromStorageIndex = (idx) => {
+  const d = new Date(ANCHOR_DATE);
+  d.setDate(d.getDate() + idx);
+  return toISODate(d);
+};
+
+// Helper: Convert YYYY-MM-DD -> Storage Index
+const getStorageIndexFromDateString = (dateStr) => {
+  const d = new Date(dateStr);
+  d.setHours(0,0,0,0);
+  const anchor = new Date(ANCHOR_DATE);
+  anchor.setHours(0,0,0,0);
+  const diff = d.getTime() - anchor.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+};
+
+
+// --- INITIAL DATA ---
 const COLOR_THEMES = [
   { name: 'Blue',    main: '#0284c7', bg: '#e0f2fe' },
   { name: 'Cyan',    main: '#0891b2', bg: '#cffafe' },
@@ -59,14 +126,19 @@ const INITIAL_TEAM = [
 
 const INITIAL_TASKS = [
   { id: 101, resourceId: 1, title: 'Auth Service', startIdx: 0, duration: 10, url: '' },
-  { id: 102, resourceId: 3, title: 'API Gateway', startIdx: 14, duration: 10, url: '' },
-  { id: 103, resourceId: 6, title: 'Regression Testing', startIdx: 16, duration: 5, url: '' },
 ];
 
 const App = () => {
-  const { dates, startDate, anchorDate } = useMemo(() => generateQuarterDates(), []);
+  // --- VIEW STATE (Not Saved) ---
+  const [viewRange, setViewRange] = useState(getCurrentQuarter());
 
-  // --- STATE ---
+  // Memoize generated dates so we don't recalc on every render
+  const { dates, totalDays } = useMemo(() =>
+      generateDateRange(viewRange.start, viewRange.end),
+    [viewRange]
+  );
+
+  // --- PERSISTED STATE ---
   const [team, setTeam] = useState(() => {
     const saved = localStorage.getItem('planner_team');
     return saved ? JSON.parse(saved) : INITIAL_TEAM;
@@ -77,58 +149,38 @@ const App = () => {
     return saved ? JSON.parse(saved) : INITIAL_TASKS;
   });
 
-  // Persistence
   useEffect(() => { localStorage.setItem('planner_team', JSON.stringify(team)); }, [team]);
   useEffect(() => { localStorage.setItem('planner_tasks', JSON.stringify(tasks)); }, [tasks]);
 
-  // Modal States
-  const [isModalOpen, setIsModalOpen] = useState(false); // Task Modal
-  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false); // Member Modal
-
+  // --- UI STATES ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
-
-  // Member Form State: 'id' is null if adding, set if editing
   const [memberForm, setMemberForm] = useState({ id: null, name: '', role: '', colorIdx: 0 });
 
   const [resizingTask, setResizingTask] = useState(null);
   const isResizingRef = useRef(false);
 
-  // --- HANDLERS: Reset ---
-  const handleResetData = () => {
-    if (window.confirm("Are you sure you want to reset all data (Tasks & Team)?")) {
-      setTeam(INITIAL_TEAM);
-      setTasks(INITIAL_TASKS);
-      localStorage.removeItem('planner_team');
-      localStorage.removeItem('planner_tasks');
-    }
-  };
-
+  // --- HELPERS ---
   const getSprintInfo = (date) => {
-    const diffTime = date.getTime() - anchorDate.getTime();
+    const diffTime = date.getTime() - ANCHOR_DATE.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     const isSprintStart = diffDays % 14 === 0;
     let label = null;
     if (isSprintStart) {
       const sprintNum = Math.floor(diffDays / 14) + 1;
-      label = diffDays < 0 ? `Sprint 0` : `Sprint ${sprintNum}`;
+      // Handle negative sprint numbers (before anchor)
+      label = diffDays < 0 ? `Sprint ${Math.floor(diffDays/14)}` : `Sprint ${sprintNum}`;
     }
     return { isSprintStart, label };
   };
 
-  // --- HANDLERS: Members (Add & Edit) ---
-
+  // --- MEMBER LOGIC ---
   const openMemberModal = (member = null) => {
     if (member) {
-      // EDIT MODE: Find color index
       const colorIdx = COLOR_THEMES.findIndex(c => c.main === member.color.main);
-      setMemberForm({
-        id: member.id,
-        name: member.name,
-        role: member.role,
-        colorIdx: colorIdx >= 0 ? colorIdx : 0
-      });
+      setMemberForm({ id: member.id, name: member.name, role: member.role, colorIdx: colorIdx >= 0 ? colorIdx : 0 });
     } else {
-      // ADD MODE
       setMemberForm({ id: null, name: '', role: '', colorIdx: 0 });
     }
     setIsMemberModalOpen(true);
@@ -136,60 +188,49 @@ const App = () => {
 
   const handleSaveMember = () => {
     if (!memberForm.name) return alert("Name is required");
-
     const newColor = COLOR_THEMES[memberForm.colorIdx];
-
     if (memberForm.id) {
-      // EDIT EXISTING
-      setTeam(prev => prev.map(m =>
-        m.id === memberForm.id
-          ? { ...m, name: memberForm.name, role: memberForm.role, color: newColor }
-          : m
-      ));
+      setTeam(prev => prev.map(m => m.id === memberForm.id ? { ...m, name: memberForm.name, role: memberForm.role, color: newColor } : m));
     } else {
-      // ADD NEW
-      const newMember = {
-        id: Date.now(),
-        name: memberForm.name,
-        role: memberForm.role || 'Contributor',
-        color: newColor
-      };
-      setTeam([...team, newMember]);
+      setTeam([...team, { id: Date.now(), name: memberForm.name, role: memberForm.role || 'Contributor', color: newColor }]);
     }
-
     setIsMemberModalOpen(false);
   };
 
   const handleDeleteMember = (id) => {
-    if (window.confirm("Delete this member? All their assigned tasks will also be removed.")) {
+    if (window.confirm("Delete this member?")) {
       setTeam(prev => prev.filter(m => m.id !== id));
-      setTasks(prev => prev.filter(t => t.resourceId !== id)); // Cleanup tasks
+      setTasks(prev => prev.filter(t => t.resourceId !== id));
     }
   };
 
-  // --- HANDLERS: Tasks ---
+  // --- TASK LOGIC ---
 
-  const handleAddTask = (resourceId, dayIndex) => {
+  const handleAddTask = (resourceId, viewIndex) => {
     if (isResizingRef.current) return;
-    const startStr = getDateStringFromIndex(startDate, dayIndex);
-    const endStr = getDateStringFromIndex(startDate, dayIndex + 5);
+
+    // Calculate storage index based on where they clicked in the current view
+    const storageIdx = getStorageIndexFromViewIndex(viewRange.start, viewIndex);
+
+    const startStr = getDateStringFromStorageIndex(storageIdx);
+    const endStr = getDateStringFromStorageIndex(storageIdx + 5);
+
     setEditingTask({ id: Date.now(), resourceId, title: 'New Task', startStr, endStr, url: '' });
     setIsModalOpen(true);
   };
 
   const handleEditTask = (task) => {
     if (isResizingRef.current) return;
-    const startStr = getDateStringFromIndex(startDate, task.startIdx);
-    const endStr = getDateStringFromIndex(startDate, task.startIdx + task.duration);
+    const startStr = getDateStringFromStorageIndex(task.startIdx);
+    const endStr = getDateStringFromStorageIndex(task.startIdx + task.duration);
     setEditingTask({ ...task, startStr, endStr });
     setIsModalOpen(true);
   };
 
   const saveTask = () => {
-    const newStartIdx = getIndexFromDateString(startDate, editingTask.startStr);
-    const newEndIdx = getIndexFromDateString(startDate, editingTask.endStr);
+    const newStartIdx = getStorageIndexFromDateString(editingTask.startStr);
+    const newEndIdx = getStorageIndexFromDateString(editingTask.endStr);
     const newDuration = newEndIdx - newStartIdx;
-
     if (newDuration <= 0) return alert("End date must be after start date");
 
     const taskToSave = { ...editingTask, startIdx: newStartIdx, duration: newDuration };
@@ -205,28 +246,39 @@ const App = () => {
     setIsModalOpen(false);
   };
 
-  // --- HANDLERS: Drag & Resize (Unchanged) ---
-  const onDragStart = (e, task) => {
+  // --- DRAG & RESIZE ---
+
+  const onDragStart = (e, task, viewIndex) => {
     if (isResizingRef.current) { e.preventDefault(); return; }
     e.dataTransfer.setData('taskId', task.id);
     const rect = e.target.getBoundingClientRect();
-    const dayOffset = Math.floor((e.clientX - rect.left) / S.DAY_WIDTH);
-    e.dataTransfer.setData('dayOffset', dayOffset);
+    // Offset relative to the bar's start
+    const clickOffset = Math.floor((e.clientX - rect.left) / S.DAY_WIDTH);
+    e.dataTransfer.setData('clickOffset', clickOffset);
   };
   const onDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; };
   const onDropRow = (e, memberId) => {
     e.preventDefault();
     const taskId = parseInt(e.dataTransfer.getData('taskId'));
     if (!taskId) return;
-    const dayOffset = parseInt(e.dataTransfer.getData('dayOffset'));
+
+    const clickOffset = parseInt(e.dataTransfer.getData('clickOffset'));
     const rowRect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rowRect.left;
-    let dropIndex = Math.floor(clickX / S.DAY_WIDTH);
-    let newStartIdx = dropIndex - dayOffset;
-    if (newStartIdx < 0) newStartIdx = 0;
-    if (newStartIdx > S.TOTAL_DAYS - 1) newStartIdx = S.TOTAL_DAYS - 1;
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, resourceId: memberId, startIdx: newStartIdx } : t));
+    const dropPixelX = e.clientX - rowRect.left;
+
+    // Index in current view
+    const dropViewIndex = Math.floor(dropPixelX / S.DAY_WIDTH);
+
+    // Calculate new start View Index
+    const newStartViewIndex = dropViewIndex - clickOffset;
+
+    // Convert View Index to Storage Index
+    const newStorageIdx = getStorageIndexFromViewIndex(viewRange.start, newStartViewIndex);
+
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, resourceId: memberId, startIdx: newStorageIdx } : t));
   };
+
+  // RESIZE
   const handleResizeStart = (e, task) => {
     e.stopPropagation(); e.preventDefault();
     isResizingRef.current = true;
@@ -257,19 +309,33 @@ const App = () => {
     };
   }, [resizingTask]);
 
+
   return (
     <S.Container>
       <S.Header>
-        <div>
-          <S.Title><Calendar size={24} /> Quarterly Resource Planner</S.Title>
-          <S.Subtitle>Drag bar to move • Drag edge to resize</S.Subtitle>
-        </div>
-        <button onClick={handleResetData} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', color: '#64748b', cursor: 'pointer', fontSize: '0.875rem' }}>
-          <RotateCcw size={16} /> Reset Data
-        </button>
+        <S.Title><Calendar size={24} /> Resource Planner</S.Title>
+
+        {/* NEW: Date Range Picker */}
+        <S.HeaderControls>
+          <S.DateRangePicker>
+            <span>From:</span>
+            <input
+              type="date"
+              value={viewRange.start}
+              onChange={(e) => setViewRange({...viewRange, start: e.target.value})}
+            />
+            <span>To:</span>
+            <input
+              type="date"
+              value={viewRange.end}
+              onChange={(e) => setViewRange({...viewRange, end: e.target.value})}
+            />
+          </S.DateRangePicker>
+        </S.HeaderControls>
       </S.Header>
 
       <S.PlannerLayout>
+        {/* SIDEBAR */}
         <S.Sidebar>
           <S.SidebarRow isHeader>Team Member</S.SidebarRow>
           <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -282,30 +348,20 @@ const App = () => {
                     <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{member.role}</div>
                   </div>
                 </div>
-
-                {/* Edit & Delete Buttons */}
                 <S.ActionBtnGroup className="actions">
-                  <S.ActionBtn hoverBg="#e0e7ff" hoverColor="#4f46e5" onClick={() => openMemberModal(member)}>
-                    <Pencil size={14} />
-                  </S.ActionBtn>
-                  <S.ActionBtn hoverBg="#fee2e2" hoverColor="#ef4444" onClick={() => handleDeleteMember(member.id)}>
-                    <Trash2 size={14} />
-                  </S.ActionBtn>
+                  <S.ActionBtn hoverBg="#e0e7ff" hoverColor="#4f46e5" onClick={() => openMemberModal(member)}><Pencil size={14} /></S.ActionBtn>
+                  <S.ActionBtn hoverBg="#fee2e2" hoverColor="#ef4444" onClick={() => handleDeleteMember(member.id)}><Trash2 size={14} /></S.ActionBtn>
                 </S.ActionBtnGroup>
-
               </S.SidebarRow>
             ))}
           </div>
-          {/* Add Member Button */}
-          <S.AddMemberBtn onClick={() => openMemberModal(null)}>
-            <Plus size={16} /> Add Member
-          </S.AddMemberBtn>
+          <S.AddMemberBtn onClick={() => openMemberModal(null)}><Plus size={16} /> Add Member</S.AddMemberBtn>
         </S.Sidebar>
 
-        {/* Timeline View */}
+        {/* TIMELINE VIEW */}
         <S.TimelineScrollArea>
-          <S.TimelineContent>
-            <S.TimelineHeader>
+          <S.TimelineContent totalDays={totalDays}>
+            <S.TimelineHeader totalDays={totalDays}>
               {dates.map((date, index) => {
                 const { isSprintStart, label } = getSprintInfo(date);
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
@@ -318,27 +374,45 @@ const App = () => {
             </S.TimelineHeader>
 
             {team.map(member => (
-              <S.TimelineRow key={member.id} onDragOver={onDragOver} onDrop={(e) => onDropRow(e, member.id)}>
+              <S.TimelineRow key={member.id} totalDays={totalDays} onDragOver={onDragOver} onDrop={(e) => onDropRow(e, member.id)}>
                 {dates.map((date, index) => {
                   const { isSprintStart } = getSprintInfo(date);
                   return (
                     <S.GridCell key={index} isSprintStart={isSprintStart} onClick={() => handleAddTask(member.id, index)} />
                   );
                 })}
-                {tasks.filter(t => t.resourceId === member.id).map(task => (
-                  <S.TaskBar key={task.id} startIndex={task.startIdx} duration={task.duration} color={member.color} onClick={(e) => { e.stopPropagation(); handleEditTask(task); }} draggable onDragStart={(e) => onDragStart(e, task)}>
-                    <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</div>
-                    {task.url && <LinkIcon size={12} style={{ marginLeft: 4, opacity: 0.5 }} />}
-                    <S.ResizeHandle onMouseDown={(e) => handleResizeStart(e, task)} />
-                  </S.TaskBar>
-                ))}
+
+                {/* RENDER TASKS */}
+                {tasks.filter(t => t.resourceId === member.id).map(task => {
+                  // Translate Storage Index to View Index
+                  const viewStartIndex = getViewIndexFromStorageIndex(viewRange.start, task.startIdx);
+
+                  // Hide tasks that are completely out of view to prevent rendering glitches
+                  if (viewStartIndex + task.duration < 0 || viewStartIndex > totalDays) return null;
+
+                  return (
+                    <S.TaskBar
+                      key={task.id}
+                      startIndex={viewStartIndex}
+                      duration={task.duration}
+                      color={member.color}
+                      onClick={(e) => { e.stopPropagation(); handleEditTask(task); }}
+                      draggable
+                      onDragStart={(e) => onDragStart(e, task, viewStartIndex)}
+                    >
+                      <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</div>
+                      {task.url && <LinkIcon size={12} style={{ marginLeft: 4, opacity: 0.5 }} />}
+                      <S.ResizeHandle onMouseDown={(e) => handleResizeStart(e, task)} />
+                    </S.TaskBar>
+                  );
+                })}
               </S.TimelineRow>
             ))}
           </S.TimelineContent>
         </S.TimelineScrollArea>
       </S.PlannerLayout>
 
-      {/* --- MEMBER MODAL (Shared Add/Edit) --- */}
+      {/* --- MODALS (Unchanged) --- */}
       {isMemberModalOpen && (
         <S.ModalOverlay onClick={() => setIsMemberModalOpen(false)}>
           <S.ModalContent onClick={e => e.stopPropagation()}>
@@ -347,82 +421,36 @@ const App = () => {
               <button onClick={() => setIsMemberModalOpen(false)}><X size={20} /></button>
             </S.ModalHeader>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <S.InputGroup>
-                <label>Name</label>
-                <input type="text" placeholder="e.g. Sarah" value={memberForm.name} onChange={(e) => setMemberForm({...memberForm, name: e.target.value})} />
-              </S.InputGroup>
-              <S.InputGroup>
-                <label>Role</label>
-                <input type="text" placeholder="e.g. Frontend" value={memberForm.role} onChange={(e) => setMemberForm({...memberForm, role: e.target.value})} />
-              </S.InputGroup>
+              <S.InputGroup><label>Name</label><input type="text" value={memberForm.name} onChange={(e) => setMemberForm({...memberForm, name: e.target.value})} /></S.InputGroup>
+              <S.InputGroup><label>Role</label><input type="text" value={memberForm.role} onChange={(e) => setMemberForm({...memberForm, role: e.target.value})} /></S.InputGroup>
               <S.InputGroup>
                 <label>Color Theme</label>
                 <S.ColorSwatchContainer>
-                  {COLOR_THEMES.map((theme, idx) => (
-                    <S.ColorSwatch
-                      key={idx}
-                      color={theme.main}
-                      isSelected={memberForm.colorIdx === idx}
-                      onClick={() => setMemberForm({...memberForm, colorIdx: idx})}
-                      title={theme.name}
-                    />
-                  ))}
+                  {COLOR_THEMES.map((theme, idx) => (<S.ColorSwatch key={idx} color={theme.main} isSelected={memberForm.colorIdx === idx} onClick={() => setMemberForm({...memberForm, colorIdx: idx})} />))}
                 </S.ColorSwatchContainer>
               </S.InputGroup>
-              <S.ButtonRow>
-                <div />
-                <S.Button variant="primary" onClick={handleSaveMember}>
-                  {memberForm.id ? 'Save Changes' : 'Add Member'}
-                </S.Button>
-              </S.ButtonRow>
+              <S.ButtonRow><div /><S.Button variant="primary" onClick={handleSaveMember}>{memberForm.id ? 'Save Changes' : 'Add Member'}</S.Button></S.ButtonRow>
             </div>
           </S.ModalContent>
         </S.ModalOverlay>
       )}
 
-      {/* --- TASK MODAL (Unchanged) --- */}
       {isModalOpen && editingTask && (
         <S.ModalOverlay onClick={() => setIsModalOpen(false)}>
           <S.ModalContent onClick={e => e.stopPropagation()}>
-            <S.ModalHeader>
-              <h3>Manage Allocation</h3>
-              <button onClick={() => setIsModalOpen(false)}><X size={20} /></button>
-            </S.ModalHeader>
+            <S.ModalHeader><h3>Manage Allocation</h3><button onClick={() => setIsModalOpen(false)}><X size={20} /></button></S.ModalHeader>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <S.InputGroup>
-                <label>Task Title</label>
-                <input type="text" value={editingTask.title} onChange={(e) => setEditingTask({...editingTask, title: e.target.value})} />
-              </S.InputGroup>
+              <S.InputGroup><label>Task Title</label><input type="text" value={editingTask.title} onChange={(e) => setEditingTask({...editingTask, title: e.target.value})} /></S.InputGroup>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <S.InputGroup>
-                  <label>Start Date</label>
-                  <input type="date" value={editingTask.startStr} onChange={(e) => setEditingTask({...editingTask, startStr: e.target.value})} />
-                </S.InputGroup>
-                <S.InputGroup>
-                  <label>End Date</label>
-                  <input type="date" value={editingTask.endStr} onChange={(e) => setEditingTask({...editingTask, endStr: e.target.value})} />
-                </S.InputGroup>
+                <S.InputGroup><label>Start Date</label><input type="date" value={editingTask.startStr} onChange={(e) => setEditingTask({...editingTask, startStr: e.target.value})} /></S.InputGroup>
+                <S.InputGroup><label>End Date</label><input type="date" value={editingTask.endStr} onChange={(e) => setEditingTask({...editingTask, endStr: e.target.value})} /></S.InputGroup>
               </div>
               <S.InputGroup>
                 <label>Jira/Doc URL</label>
-                <div style={{ display: 'flex' }}>
-                  <span style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRight: 0, borderRadius: '4px 0 0 4px', padding: '8px', display: 'flex', alignItems: 'center' }}>
-                    <LinkIcon size={16} color="#64748b"/>
-                  </span>
-                  <input type="text" placeholder="https://..." value={editingTask.url} onChange={(e) => setEditingTask({...editingTask, url: e.target.value})} style={{ borderRadius: '0 4px 4px 0', width: '100%' }} />
-                </div>
+                <div style={{ display: 'flex' }}><span style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRight: 0, borderRadius: '4px 0 0 4px', padding: '8px', display: 'flex', alignItems: 'center' }}><LinkIcon size={16} color="#64748b"/></span><input type="text" value={editingTask.url} onChange={(e) => setEditingTask({...editingTask, url: e.target.value})} style={{ borderRadius: '0 4px 4px 0', width: '100%' }} /></div>
               </S.InputGroup>
-              {editingTask.url && (
-                <div style={{ marginTop: '-12px', marginBottom: '8px', textAlign: 'right' }}>
-                  <a href={editingTask.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', color: '#4f46e5', textDecoration: 'none', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', backgroundColor: '#eef2ff', borderRadius: '4px' }}>
-                    Open Link <ExternalLink size={12} />
-                  </a>
-                </div>
-              )}
-              <S.ButtonRow>
-                <S.Button variant="danger" onClick={deleteTask}>Delete</S.Button>
-                <S.Button variant="primary" onClick={saveTask}>Save Changes</S.Button>
-              </S.ButtonRow>
+              {editingTask.url && <div style={{ marginTop: '-12px', marginBottom: '8px', textAlign: 'right' }}><a href={editingTask.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', color: '#4f46e5', textDecoration: 'none', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', backgroundColor: '#eef2ff', borderRadius: '4px' }}>Open Link <ExternalLink size={12} /></a></div>}
+              <S.ButtonRow><S.Button variant="danger" onClick={deleteTask}>Delete</S.Button><S.Button variant="primary" onClick={saveTask}>Save Changes</S.Button></S.ButtonRow>
             </div>
           </S.ModalContent>
         </S.ModalOverlay>

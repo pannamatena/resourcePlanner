@@ -1,8 +1,8 @@
 import styled from '@emotion/styled';
 
-// ... (Existing constants and styled components remain the same) ...
+// --- Constants ---
 export const DAY_WIDTH = 40;
-export const TOTAL_DAYS = 84;
+// Note: TOTAL_DAYS is removed because it is now dynamic
 
 export const Container = styled.div`
   padding: 24px;
@@ -17,6 +17,36 @@ export const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+`;
+
+export const HeaderControls = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+`;
+
+export const DateRangePicker = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  padding: 6px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #475569;
+
+  input {
+    border: none;
+    font-family: inherit;
+    color: #0f172a;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+    background: transparent;
+  }
+  
+  span { color: #94a3b8; }
 `;
 
 export const Title = styled.h1`
@@ -71,25 +101,17 @@ export const SidebarRow = styled.div`
   font-weight: ${props => props.isHeader ? '600' : 'normal'};
   color: ${props => props.isHeader ? '#475569' : 'inherit'};
   
-  /* Show action buttons on hover */
-  &:hover .actions {
-    opacity: 1;
-  }
-  
-  &:hover {
-    background-color: ${props => !props.isHeader && 'white'};
-  }
+  &:hover .actions { opacity: 1; }
+  &:hover { background-color: ${props => !props.isHeader && 'white'}; }
 `;
 
-// NEW: Container for Edit/Delete buttons
 export const ActionBtnGroup = styled.div`
   display: flex;
   gap: 4px;
-  opacity: 0; /* Hidden by default */
+  opacity: 0;
   transition: opacity 0.2s;
 `;
 
-// UPDATED: Generic Action Button (used for both Edit and Delete)
 export const ActionBtn = styled.button`
   background: none;
   border: none;
@@ -99,10 +121,7 @@ export const ActionBtn = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-
-  /* Color variants */
   color: ${props => props.color || '#64748b'}; 
-  
   &:hover {
     background-color: ${props => props.hoverBg || '#f1f5f9'};
     color: ${props => props.hoverColor || '#0f172a'};
@@ -123,12 +142,7 @@ export const AddMemberBtn = styled.button`
   justify-content: center;
   gap: 8px;
   transition: all 0.2s;
-  
-  &:hover {
-    border-color: #4f46e5;
-    color: #4f46e5;
-    background: #eef2ff;
-  }
+  &:hover { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; }
 `;
 
 export const Avatar = styled.div`
@@ -151,13 +165,15 @@ export const TimelineScrollArea = styled.div`
   position: relative;
 `;
 
+// UPDATED: Dynamic width based on totalDays prop
 export const TimelineContent = styled.div`
-  width: ${() => TOTAL_DAYS * DAY_WIDTH}px; 
+  width: ${props => props.totalDays * DAY_WIDTH}px; 
 `;
 
+// UPDATED: Dynamic grid columns based on totalDays prop
 export const TimelineHeader = styled.div`
   display: grid;
-  grid-template-columns: repeat(${TOTAL_DAYS}, ${DAY_WIDTH}px);
+  grid-template-columns: repeat(${props => props.totalDays}, ${DAY_WIDTH}px);
   height: 80px;
   border-bottom: 1px solid #e2e8f0;
   background-color: #f1f5f9;
@@ -197,12 +213,13 @@ export const DayHeaderCell = styled.div`
   }
 `;
 
+// UPDATED: Dynamic grid columns
 export const TimelineRow = styled.div`
   position: relative;
   height: 64px;
   border-bottom: 1px solid #e2e8f0;
   display: grid;
-  grid-template-columns: repeat(${TOTAL_DAYS}, ${DAY_WIDTH}px);
+  grid-template-columns: repeat(${props => props.totalDays}, ${DAY_WIDTH}px);
   background-color: white;
 `;
 
@@ -212,10 +229,7 @@ export const GridCell = styled.div`
   transition: background-color 0.2s;
   background-color: ${props => props.isSprintStart ? '#f8fafc' : 'transparent'};
   border-left: ${props => props.isSprintStart ? '2px solid #e2e8f0' : 'none'};
-
-  &:hover {
-    background-color: #e0e7ff;
-  }
+  &:hover { background-color: #e0e7ff; }
 `;
 
 export const TaskBar = styled.div`
@@ -234,22 +248,19 @@ export const TaskBar = styled.div`
   font-weight: 500;
   white-space: nowrap;
   
+  /* POSITIONING LOGIC */
   left: calc(${props => props.startIndex * DAY_WIDTH}px + 2px);
   width: calc(${props => props.duration * DAY_WIDTH}px - 4px);
+
+  /* VISIBILITY LOGIC (Hidden if out of range) */
+  display: ${props => props.isHidden ? 'none' : 'flex'};
 
   background-color: ${props => props.color ? props.color.bg : '#e0e7ff'};
   border-color: ${props => props.color ? props.color.main : '#818cf8'};
   color: ${props => props.color ? props.color.main : '#3730a3'};
   z-index: 5;
-
-  &:hover {
-    filter: brightness(0.96);
-    z-index: 6;
-  }
-  
-  &:active {
-    cursor: grabbing;
-  }
+  &:hover { filter: brightness(0.96); z-index: 6; }
+  &:active { cursor: grabbing; }
 `;
 
 export const ResizeHandle = styled.div`
@@ -267,60 +278,37 @@ export const ResizeHandle = styled.div`
   &::after { content: ''; height: 12px; width: 2px; border-left: 2px dotted rgba(0,0,0,0.2); }
 `;
 
+// ... Modals and other components remain unchanged ...
 export const ModalOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
+  position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5);
+  display: flex; align-items: center; justify-content: center; z-index: 50;
 `;
-
 export const ModalContent = styled.div`
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  width: 384px;
-  padding: 24px;
+  background: white; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); width: 384px; padding: 24px;
 `;
-
 export const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
   h3 { font-size: 1.125rem; font-weight: 700; margin: 0; }
   button { background: none; border: none; cursor: pointer; color: #94a3b8; &:hover { color: #475569; } }
 `;
-
 export const InputGroup = styled.div`
   margin-bottom: 16px;
   label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
   input, select { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; font-size: 0.875rem; box-sizing: border-box; }
 `;
-
 export const ButtonRow = styled.div`
   display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 16px;
 `;
-
 export const Button = styled.button`
   padding: 8px 16px; border-radius: 4px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none;
   ${props => props.variant === 'danger' && `color: #ef4444; background: none; &:hover { color: #b91c1c; }`}
   ${props => props.variant === 'primary' && `background-color: #4f46e5; color: white; &:hover { background-color: #4338ca; }`}
 `;
-
 export const ColorSwatchContainer = styled.div`
-  display: flex;
-  gap: 8px;
+  display: flex; gap: 8px;
 `;
-
 export const ColorSwatch = styled.div`
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background-color: ${props => props.color};
-  cursor: pointer;
+  width: 24px; height: 24px; border-radius: 50%; background-color: ${props => props.color}; cursor: pointer;
   border: 2px solid ${props => props.isSelected ? '#1e293b' : 'transparent'};
   &:hover { transform: scale(1.1); }
 `;
