@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Link as LinkIcon, X, Calendar } from 'lucide-react';
+import { Link as LinkIcon, X, Calendar, RotateCcw, ExternalLink } from 'lucide-react'; // Added ExternalLink icon
 import * as S from './Style';
 
 // --- Date Helpers ---
@@ -46,26 +46,39 @@ const INITIAL_TEAM = [
   { id: 6, name: 'Craig', role: 'QA',      color: { main: '#059669', bg: '#d1fae5' } },
 ];
 
+const INITIAL_TASKS = [
+  { id: 101, resourceId: 1, title: 'Auth Service', startIdx: 0, duration: 10, url: '' },
+  { id: 102, resourceId: 3, title: 'API Gateway', startIdx: 14, duration: 10, url: '' },
+  { id: 103, resourceId: 6, title: 'Regression Testing', startIdx: 16, duration: 5, url: '' },
+];
+
 const App = () => {
   const { dates, startDate, anchorDate } = useMemo(() => generateQuarterDates(), []);
   const [team] = useState(INITIAL_TEAM);
 
-  const [tasks, setTasks] = useState([
-    { id: 101, resourceId: 1, title: 'Auth Service', startIdx: 0, duration: 10, url: '' },
-    { id: 102, resourceId: 3, title: 'API Gateway', startIdx: 14, duration: 10, url: '' },
-    { id: 103, resourceId: 6, title: 'Regression Testing', startIdx: 16, duration: 5, url: '' },
-  ]);
+  const [tasks, setTasks] = useState(() => {
+    const saved = localStorage.getItem('planner_tasks');
+    return saved ? JSON.parse(saved) : INITIAL_TASKS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('planner_tasks', JSON.stringify(tasks));
+  }, [tasks]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
-
-  // --- Resize State ---
-  const [resizingTask, setResizingTask] = useState(null); // { id, initialX, initialDuration }
-
-  // Ref to track if we are currently resizing (to prevent opening modal on mouseUp)
+  const [resizingTask, setResizingTask] = useState(null);
   const isResizingRef = useRef(false);
 
-  // --- Helpers ---
+  // --- Handlers ---
+
+  const handleResetData = () => {
+    if (window.confirm("Are you sure you want to reset all data to defaults?")) {
+      setTasks(INITIAL_TASKS);
+      localStorage.removeItem('planner_tasks');
+    }
+  };
+
   const getSprintInfo = (date) => {
     const diffTime = date.getTime() - anchorDate.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -78,9 +91,8 @@ const App = () => {
     return { isSprintStart, label };
   };
 
-  // --- Modal Logic ---
   const handleAddTask = (resourceId, dayIndex) => {
-    if (isResizingRef.current) return; // Don't add if we just finished resizing
+    if (isResizingRef.current) return;
     const startStr = getDateStringFromIndex(startDate, dayIndex);
     const endStr = getDateStringFromIndex(startDate, dayIndex + 5);
     setEditingTask({ id: Date.now(), resourceId, title: 'New Task', startStr, endStr, url: '' });
@@ -88,7 +100,7 @@ const App = () => {
   };
 
   const handleEditTask = (task) => {
-    if (isResizingRef.current) return; // Don't edit if we just finished resizing
+    if (isResizingRef.current) return;
     const startStr = getDateStringFromIndex(startDate, task.startIdx);
     const endStr = getDateStringFromIndex(startDate, task.startIdx + task.duration);
     setEditingTask({ ...task, startStr, endStr });
@@ -117,13 +129,8 @@ const App = () => {
     setIsModalOpen(false);
   };
 
-  // --- Drag and Drop (Move) Logic ---
   const onDragStart = (e, task) => {
-    // If resizing, don't allow dragging
-    if (isResizingRef.current) {
-      e.preventDefault();
-      return;
-    }
+    if (isResizingRef.current) { e.preventDefault(); return; }
     e.dataTransfer.setData('taskId', task.id);
     const rect = e.target.getBoundingClientRect();
     const dayOffset = Math.floor((e.clientX - rect.left) / S.DAY_WIDTH);
@@ -149,46 +156,29 @@ const App = () => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, resourceId: memberId, startIdx: newStartIdx } : t));
   };
 
-  // --- RESIZE LOGIC (Mouse Events) ---
-
   const handleResizeStart = (e, task) => {
-    e.stopPropagation(); // Prevent triggering Drag or Click
-    e.preventDefault();  // Prevent text selection
-
+    e.stopPropagation();
+    e.preventDefault();
     isResizingRef.current = true;
-    setResizingTask({
-      id: task.id,
-      initialX: e.clientX,
-      initialDuration: task.duration
-    });
+    setResizingTask({ id: task.id, initialX: e.clientX, initialDuration: task.duration });
   };
 
-  // Global Mouse Listeners for Resizing
   useEffect(() => {
     const handleGlobalMouseMove = (e) => {
       if (!resizingTask) return;
-
-      // Calculate delta in pixels
       const deltaPixels = e.clientX - resizingTask.initialX;
-
-      // Convert to days (Snap)
       const deltaDays = Math.round(deltaPixels / S.DAY_WIDTH);
 
       let newDuration = resizingTask.initialDuration + deltaDays;
-      if (newDuration < 1) newDuration = 1; // Minimum 1 day
+      if (newDuration < 1) newDuration = 1;
 
-      setTasks(prev => prev.map(t =>
-        t.id === resizingTask.id ? { ...t, duration: newDuration } : t
-      ));
+      setTasks(prev => prev.map(t => t.id === resizingTask.id ? { ...t, duration: newDuration } : t));
     };
 
     const handleGlobalMouseUp = () => {
       if (resizingTask) {
         setResizingTask(null);
-        // Slight delay before allowing clicks again to prevent modal from popping up
-        setTimeout(() => {
-          isResizingRef.current = false;
-        }, 100);
+        setTimeout(() => { isResizingRef.current = false; }, 100);
       }
     };
 
@@ -196,13 +186,11 @@ const App = () => {
       window.addEventListener('mousemove', handleGlobalMouseMove);
       window.addEventListener('mouseup', handleGlobalMouseUp);
     }
-
     return () => {
       window.removeEventListener('mousemove', handleGlobalMouseMove);
       window.removeEventListener('mouseup', handleGlobalMouseUp);
     };
   }, [resizingTask]);
-
 
   return (
     <S.Container>
@@ -211,6 +199,12 @@ const App = () => {
           <S.Title><Calendar size={24} /> Quarterly Resource Planner</S.Title>
           <S.Subtitle>Drag bar to move • Drag edge to resize</S.Subtitle>
         </div>
+        <button
+          onClick={handleResetData}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', color: '#64748b', cursor: 'pointer', fontSize: '0.875rem' }}
+        >
+          <RotateCcw size={16} /> Reset Data
+        </button>
       </S.Header>
 
       <S.PlannerLayout>
@@ -265,15 +259,13 @@ const App = () => {
                     duration={task.duration}
                     color={member.color}
                     onClick={(e) => { e.stopPropagation(); handleEditTask(task); }}
-                    draggable // HTML5 Drag for moving
+                    draggable
                     onDragStart={(e) => onDragStart(e, task)}
                   >
                     <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {task.title}
                     </div>
                     {task.url && <LinkIcon size={12} style={{ marginLeft: 4, opacity: 0.5 }} />}
-
-                    {/* NEW: Resize Handle inside the bar */}
                     <S.ResizeHandle onMouseDown={(e) => handleResizeStart(e, task)} />
                   </S.TaskBar>
                 ))}
@@ -284,6 +276,7 @@ const App = () => {
         </S.TimelineScrollArea>
       </S.PlannerLayout>
 
+      {/* --- MODAL UPDATED --- */}
       {isModalOpen && editingTask && (
         <S.ModalOverlay onClick={() => setIsModalOpen(false)}>
           <S.ModalContent onClick={e => e.stopPropagation()}>
@@ -306,6 +299,42 @@ const App = () => {
                   <input type="date" value={editingTask.endStr} onChange={(e) => setEditingTask({...editingTask, endStr: e.target.value})} />
                 </S.InputGroup>
               </div>
+
+              <S.InputGroup>
+                <label>Jira/Doc URL</label>
+                <div style={{ display: 'flex' }}>
+                  <span style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRight: 0, borderRadius: '4px 0 0 4px', padding: '8px', display: 'flex', alignItems: 'center' }}>
+                    <LinkIcon size={16} color="#64748b"/>
+                  </span>
+                  <input type="text" placeholder="https://..." value={editingTask.url} onChange={(e) => setEditingTask({...editingTask, url: e.target.value})} style={{ borderRadius: '0 4px 4px 0', width: '100%' }} />
+                </div>
+              </S.InputGroup>
+
+              {/* --- NEW: Clickable Link --- */}
+              {editingTask.url && (
+                <div style={{ marginTop: '-12px', marginBottom: '8px', textAlign: 'right' }}>
+                  <a
+                    href={editingTask.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '0.85rem',
+                      color: '#4f46e5',
+                      textDecoration: 'none',
+                      fontWeight: 500,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '4px 8px',
+                      backgroundColor: '#eef2ff',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    Open Link <ExternalLink size={12} />
+                  </a>
+                </div>
+              )}
+
               <S.ButtonRow>
                 <S.Button variant="danger" onClick={deleteTask}>Delete</S.Button>
                 <S.Button variant="primary" onClick={saveTask}>Save Changes</S.Button>
