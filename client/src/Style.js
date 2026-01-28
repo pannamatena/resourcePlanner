@@ -1,8 +1,6 @@
 import styled from '@emotion/styled';
 
-// --- Constants ---
 export const DAY_WIDTH = 40;
-// Note: TOTAL_DAYS is removed because it is now dynamic
 
 export const Container = styled.div`
   padding: 24px;
@@ -21,8 +19,36 @@ export const Header = styled.div`
 
 export const HeaderControls = styled.div`
   display: flex;
-  gap: 12px;
+  gap: 16px;
   align-items: center;
+`;
+
+export const ButtonGroup = styled.div`
+  display: flex;
+  gap: 8px;
+  padding-left: 16px;
+  border-left: 1px solid #e2e8f0;
+`;
+
+export const HeaderBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #4f46e5;
+    color: #4f46e5;
+    background-color: #eef2ff;
+  }
 `;
 
 export const DateRangePicker = styled.div`
@@ -61,12 +87,6 @@ export const Title = styled.h1`
   svg {
     color: #4f46e5;
   }
-`;
-
-export const Subtitle = styled.p`
-  color: #64748b;
-  font-size: 0.875rem;
-  margin: 4px 0 0 0;
 `;
 
 export const PlannerLayout = styled.div`
@@ -165,12 +185,10 @@ export const TimelineScrollArea = styled.div`
   position: relative;
 `;
 
-// UPDATED: Dynamic width based on totalDays prop
 export const TimelineContent = styled.div`
   width: ${props => props.totalDays * DAY_WIDTH}px; 
 `;
 
-// UPDATED: Dynamic grid columns based on totalDays prop
 export const TimelineHeader = styled.div`
   display: grid;
   grid-template-columns: repeat(${props => props.totalDays}, ${DAY_WIDTH}px);
@@ -213,7 +231,6 @@ export const DayHeaderCell = styled.div`
   }
 `;
 
-// UPDATED: Dynamic grid columns
 export const TimelineRow = styled.div`
   position: relative;
   height: 64px;
@@ -248,11 +265,8 @@ export const TaskBar = styled.div`
   font-weight: 500;
   white-space: nowrap;
   
-  /* POSITIONING LOGIC */
   left: calc(${props => props.startIndex * DAY_WIDTH}px + 2px);
   width: calc(${props => props.duration * DAY_WIDTH}px - 4px);
-
-  /* VISIBILITY LOGIC (Hidden if out of range) */
   display: ${props => props.isHidden ? 'none' : 'flex'};
 
   background-color: ${props => props.color ? props.color.bg : '#e0e7ff'};
@@ -278,7 +292,6 @@ export const ResizeHandle = styled.div`
   &::after { content: ''; height: 12px; width: 2px; border-left: 2px dotted rgba(0,0,0,0.2); }
 `;
 
-// ... Modals and other components remain unchanged ...
 export const ModalOverlay = styled.div`
   position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5);
   display: flex; align-items: center; justify-content: center; z-index: 50;
