@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
 
-// --- Constants ---
+// ... (Existing constants and styled components remain the same) ...
 export const DAY_WIDTH = 40;
 export const TOTAL_DAYS = 84;
 
@@ -50,12 +50,14 @@ export const PlannerLayout = styled.div`
 `;
 
 export const Sidebar = styled.div`
-  width: 192px;
+  width: 220px;
   flex-shrink: 0;
   border-right: 1px solid #e2e8f0;
   background-color: #f8fafc;
   z-index: 30;
   box-shadow: 4px 0 6px -4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
 `;
 
 export const SidebarRow = styled.div`
@@ -63,13 +65,69 @@ export const SidebarRow = styled.div`
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 16px;
   background-color: ${props => props.isHeader ? '#f1f5f9' : 'transparent'};
   font-weight: ${props => props.isHeader ? '600' : 'normal'};
   color: ${props => props.isHeader ? '#475569' : 'inherit'};
   
+  /* Show action buttons on hover */
+  &:hover .actions {
+    opacity: 1;
+  }
+  
   &:hover {
     background-color: ${props => !props.isHeader && 'white'};
+  }
+`;
+
+// NEW: Container for Edit/Delete buttons
+export const ActionBtnGroup = styled.div`
+  display: flex;
+  gap: 4px;
+  opacity: 0; /* Hidden by default */
+  transition: opacity 0.2s;
+`;
+
+// UPDATED: Generic Action Button (used for both Edit and Delete)
+export const ActionBtn = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Color variants */
+  color: ${props => props.color || '#64748b'}; 
+  
+  &:hover {
+    background-color: ${props => props.hoverBg || '#f1f5f9'};
+    color: ${props => props.hoverColor || '#0f172a'};
+  }
+`;
+
+export const AddMemberBtn = styled.button`
+  margin: 16px;
+  padding: 8px;
+  border: 1px dashed #cbd5e1;
+  background: white;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  
+  &:hover {
+    border-color: #4f46e5;
+    color: #4f46e5;
+    background: #eef2ff;
   }
 `;
 
@@ -194,33 +252,20 @@ export const TaskBar = styled.div`
   }
 `;
 
-// NEW: Resize Handle Component
 export const ResizeHandle = styled.div`
   position: absolute;
   right: 0;
   top: 0;
   bottom: 0;
-  width: 12px; /* Touch target size */
-  cursor: col-resize; /* East-West Arrow Cursor */
+  width: 12px;
+  cursor: col-resize;
   z-index: 20;
   display: flex;
   align-items: center;
   justify-content: center;
-  
-  /* Visual Hint on Hover */
-  &:hover {
-    background-color: rgba(0,0,0,0.05);
-  }
-
-  /* Little dots to indicate grip */
-  &::after {
-    content: '';
-    height: 12px;
-    width: 2px;
-    border-left: 2px dotted rgba(0,0,0,0.2);
-  }
+  &:hover { background-color: rgba(0,0,0,0.05); }
+  &::after { content: ''; height: 12px; width: 2px; border-left: 2px dotted rgba(0,0,0,0.2); }
 `;
-
 
 export const ModalOverlay = styled.div`
   position: fixed;
@@ -252,7 +297,7 @@ export const ModalHeader = styled.div`
 export const InputGroup = styled.div`
   margin-bottom: 16px;
   label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
-  input { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; font-size: 0.875rem; box-sizing: border-box; }
+  input, select { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; font-size: 0.875rem; box-sizing: border-box; }
 `;
 
 export const ButtonRow = styled.div`
@@ -263,4 +308,19 @@ export const Button = styled.button`
   padding: 8px 16px; border-radius: 4px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none;
   ${props => props.variant === 'danger' && `color: #ef4444; background: none; &:hover { color: #b91c1c; }`}
   ${props => props.variant === 'primary' && `background-color: #4f46e5; color: white; &:hover { background-color: #4338ca; }`}
+`;
+
+export const ColorSwatchContainer = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+export const ColorSwatch = styled.div`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: ${props => props.color};
+  cursor: pointer;
+  border: 2px solid ${props => props.isSelected ? '#1e293b' : 'transparent'};
+  &:hover { transform: scale(1.1); }
 `;
