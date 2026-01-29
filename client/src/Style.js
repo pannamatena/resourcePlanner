@@ -54,7 +54,7 @@ export const LegendSwatch = styled.div`
   height: 12px;
   border-radius: 2px;
   background-color: ${props => {
-  if (props.type === 'US') return '#fecaca';
+  if (props.type === 'US') return '#F8F6EBFF';
   if (props.type === 'IE') return '#bbf7d0';
   if (props.type === 'UK') return '#bfdbfe';
   return '#ccc';
@@ -213,7 +213,7 @@ export const DayHeaderCell = styled.div`
   /* Background Color */
   background-color: ${props => {
   if (props.isToday) return '#fee2e2'; // Light Red Bg
-  if (props.holidayType === 'US') return '#fee2e2';
+  if (props.holidayType === 'US') return '#F8F6EBFF';
   if (props.holidayType === 'IE') return '#dcfce7';
   if (props.holidayType === 'UK') return '#dbeafe';
   if (props.isWeekend) return '#e2e8f0';
@@ -223,7 +223,7 @@ export const DayHeaderCell = styled.div`
   /* Top Border Highlight */
   border-top: ${props => {
   if (props.isToday) return '4px solid #ef4444'; // Red Top Border
-  if (props.holidayType === 'US') return '4px solid #ef4444';
+  if (props.holidayType === 'US') return '4px solid #efd944';
   if (props.holidayType === 'IE') return '4px solid #22c55e';
   if (props.holidayType === 'UK') return '4px solid #3b82f6';
   return 'none';
@@ -258,7 +258,7 @@ export const GridCell = styled.div`
   /* Column Background */
   background-color: ${props => {
   if (props.isToday) return '#fef2f2'; // Very Light Red
-  if (props.holidayType === 'US') return '#fef2f2';
+  if (props.holidayType === 'US') return '#F8F6EBFF';
   if (props.holidayType === 'IE') return '#f0fdf4';
   if (props.holidayType === 'UK') return '#eff6ff';
   if (props.isWeekend) return '#f1f5f9';

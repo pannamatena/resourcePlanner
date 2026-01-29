@@ -15,10 +15,9 @@ export const PlannerProvider = ({ children }) => {
     // Check for date change every minute
     const timer = setInterval(() => {
       setToday(new Date());
-    }, 60000); // 60 seconds
+    }, 60000);
     return () => clearInterval(timer);
   }, []);
-  // ----------------------------------------
 
   const { dates, totalDays } = useMemo(() =>
       generateDateRange(viewRange.start, viewRange.end),
@@ -38,17 +37,32 @@ export const PlannerProvider = ({ children }) => {
   useEffect(() => { localStorage.setItem('planner_team', JSON.stringify(team)); }, [team]);
   useEffect(() => { localStorage.setItem('planner_tasks', JSON.stringify(tasks)); }, [tasks]);
 
-  // Actions (same as before)
+  // Actions
   const addMember = (newMember) => setTeam(prev => [...prev, newMember]);
-  const updateMember = (updatedMember) => setTeam(prev => prev.map(m => m.id === updatedMember.id ? updatedMember : m));
+
+  // --- FIXED: Merge updates instead of replacing ---
+  const updateMember = (updatedMember) => {
+    setTeam(prev => prev.map(m => m.id === updatedMember.id ? { ...m, ...updatedMember } : m));
+  };
+
   const deleteMember = (id) => {
     setTeam(prev => prev.filter(m => m.id !== id));
     setTasks(prev => prev.filter(t => t.resourceId !== id));
   };
+
   const addTask = (newTask) => setTasks(prev => [...prev, newTask]);
-  const updateTask = (updatedTask) => setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+
+  // --- FIXED: Merge updates instead of replacing ---
+  const updateTask = (updatedTask) => {
+    setTasks(prev => prev.map(t => t.id === updatedTask.id ? { ...t, ...updatedTask } : t));
+  };
+
   const deleteTask = (id) => setTasks(prev => prev.filter(t => t.id !== id));
-  const importData = (importedTeam, importedTasks) => { setTeam(importedTeam); setTasks(importedTasks); };
+
+  const importData = (importedTeam, importedTasks) => {
+    setTeam(importedTeam);
+    setTasks(importedTasks);
+  };
 
   const value = {
     viewRange,
@@ -56,7 +70,7 @@ export const PlannerProvider = ({ children }) => {
     totalDays,
     team,
     tasks,
-    today, // Expose today to consumers
+    today,
     setViewRange,
     actions: { addMember, updateMember, deleteMember, addTask, updateTask, deleteTask, importData }
   };
