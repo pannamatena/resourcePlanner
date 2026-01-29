@@ -26,9 +26,9 @@ A modern, interactive React application for managing team resources, allocating 
 ### Installation
 
 1.  Clone the repository or download the source code.
-2.  Navigate to the project directory:
+2.  Navigate to the client directory:
     ```bash
-    cd resource-planner
+    cd resource-planner/client
     ```
 3.  Install dependencies:
     ```bash
@@ -40,4 +40,6 @@ A modern, interactive React application for managing team resources, allocating 
 
 Runs the app in development mode.
 ```bash
+# Ensure you are in the client folder
+cd client
 npm start
