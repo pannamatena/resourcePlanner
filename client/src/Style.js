@@ -17,10 +17,45 @@ export const Header = styled.div`
   align-items: center;
 `;
 
+export const HeaderLeft = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
 export const HeaderControls = styled.div`
   display: flex;
   gap: 16px;
   align-items: center;
+`;
+
+// --- NEW: LEGEND STYLES ---
+export const LegendContainer = styled.div`
+  display: flex;
+  gap: 12px;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 4px;
+`;
+
+export const LegendItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+export const LegendSwatch = styled.div`
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  /* Dynamic color based on type */
+  background-color: ${props => {
+  if (props.type === 'US') return '#fecaca'; // Red-200
+  if (props.type === 'IE') return '#bbf7d0'; // Green-200
+  if (props.type === 'UK') return '#bfdbfe'; // Blue-200
+  return '#ccc';
+}};
+  border: 1px solid rgba(0,0,0,0.1);
 `;
 
 export const ButtonGroup = styled.div`
@@ -200,6 +235,7 @@ export const TimelineHeader = styled.div`
   z-index: 20;
 `;
 
+// UPDATED: Handle holiday colors
 export const DayHeaderCell = styled.div`
   border-right: 1px solid #e2e8f0;
   display: flex;
@@ -211,7 +247,24 @@ export const DayHeaderCell = styled.div`
   color: #64748b;
   font-weight: 600;
   position: relative;
-  background-color: ${props => props.isWeekend ? '#f8fafc' : 'transparent'};
+  
+  /* Background Logic: Holiday > Weekend > Transparent */
+  background-color: ${props => {
+  if (props.holidayType === 'US') return '#fee2e2'; // Red-100
+  if (props.holidayType === 'IE') return '#dcfce7'; // Green-100
+  if (props.holidayType === 'UK') return '#dbeafe'; // Blue-100
+  if (props.isWeekend) return '#e2e8f0';
+  return 'transparent';
+}};
+
+  /* Top Border for Holiday Indication */
+  border-top: ${props => {
+  if (props.holidayType === 'US') return '4px solid #ef4444';
+  if (props.holidayType === 'IE') return '4px solid #22c55e';
+  if (props.holidayType === 'UK') return '4px solid #3b82f6';
+  return 'none';
+}};
+  
   border-left: ${props => props.isSprintStart ? '2px solid #6366f1' : 'none'};
 
   &::before {
@@ -240,12 +293,24 @@ export const TimelineRow = styled.div`
   background-color: white;
 `;
 
+// UPDATED: Handle holiday colors in the grid
 export const GridCell = styled.div`
   border-right: 1px solid #f1f5f9;
   cursor: pointer;
   transition: background-color 0.2s;
-  background-color: ${props => props.isSprintStart ? '#f8fafc' : 'transparent'};
+  
+  /* Background Logic: Holiday > Weekend > Sprint > Transparent */
+  background-color: ${props => {
+  if (props.holidayType === 'US') return '#fef2f2'; // Red-50
+  if (props.holidayType === 'IE') return '#f0fdf4'; // Green-50
+  if (props.holidayType === 'UK') return '#eff6ff'; // Blue-50
+  if (props.isWeekend) return '#f1f5f9';
+  if (props.isSprintStart) return '#f8fafc';
+  return 'transparent';
+}};
+  
   border-left: ${props => props.isSprintStart ? '2px solid #e2e8f0' : 'none'};
+  
   &:hover { background-color: #e0e7ff; }
 `;
 
@@ -292,6 +357,7 @@ export const ResizeHandle = styled.div`
   &::after { content: ''; height: 12px; width: 2px; border-left: 2px dotted rgba(0,0,0,0.2); }
 `;
 
+// ... Modals unchanged ...
 export const ModalOverlay = styled.div`
   position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5);
   display: flex; align-items: center; justify-content: center; z-index: 50;
@@ -324,4 +390,31 @@ export const ColorSwatch = styled.div`
   width: 24px; height: 24px; border-radius: 50%; background-color: ${props => props.color}; cursor: pointer;
   border: 2px solid ${props => props.isSelected ? '#1e293b' : 'transparent'};
   &:hover { transform: scale(1.1); }
+`;
+
+// Add these to your existing Style.js
+
+export const MemberInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  flex: 1; 
+  min-width: 0; 
+  margin-right: 4px;
+`;
+
+export const MemberName = styled.div`
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+export const MemberRole = styled.div`
+  font-size: 0.75rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;

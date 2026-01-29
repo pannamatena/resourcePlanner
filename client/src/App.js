@@ -7,6 +7,47 @@ import * as S from './Style';
 const toISODate = (date) => date.toISOString().split('T')[0];
 const formatDate = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
+// --- HOLIDAY DATA (2026) ---
+const HOLIDAYS_2026 = [
+  // JAN
+  { date: '2026-01-01', type: 'IE' }, { date: '2026-01-01', type: 'UK' }, { date: '2026-01-01', type: 'US' },
+  { date: '2026-01-19', type: 'US' },
+  // FEB
+  { date: '2026-02-02', type: 'IE' },
+  { date: '2026-02-16', type: 'US' },
+  // MAR
+  { date: '2026-03-17', type: 'IE' },
+  // APR
+  { date: '2026-04-03', type: 'UK' },
+  { date: '2026-04-06', type: 'IE' }, { date: '2026-04-06', type: 'UK' },
+  // MAY
+  { date: '2026-05-04', type: 'IE' }, { date: '2026-05-04', type: 'UK' },
+  { date: '2026-05-25', type: 'UK' }, { date: '2026-05-25', type: 'US' },
+  // JUN
+  { date: '2026-06-01', type: 'IE' },
+  { date: '2026-06-19', type: 'US' },
+  // JUL
+  { date: '2026-07-04', type: 'US' },
+  // AUG
+  { date: '2026-08-03', type: 'IE' },
+  { date: '2026-08-31', type: 'UK' },
+  // SEP
+  { date: '2026-09-07', type: 'US' },
+  // OCT
+  { date: '2026-10-26', type: 'IE' },
+  // NOV
+  { date: '2026-11-26', type: 'US' },
+  // DEC
+  { date: '2026-12-25', type: 'IE' }, { date: '2026-12-25', type: 'UK' }, { date: '2026-12-25', type: 'US' },
+  { date: '2026-12-26', type: 'IE' }, { date: '2026-12-26', type: 'UK' },
+];
+
+const getHolidayType = (date) => {
+  const dateStr = toISODate(date);
+  const match = HOLIDAYS_2026.find(h => h.date === dateStr);
+  return match ? match.type : null;
+};
+
 const getCurrentQuarter = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -36,7 +77,7 @@ const generateDateRange = (startStr, endStr) => {
   return { dates, totalDays: dates.length };
 };
 
-const ANCHOR_DATE = new Date('2026-02-05T00:00:00');
+const ANCHOR_DATE = new Date('2026-01-08T00:00:00');
 
 const getStorageIndexFromViewIndex = (viewStartDate, viewIndex) => {
   const viewDate = new Date(viewStartDate);
@@ -70,15 +111,15 @@ const getStorageIndexFromDateString = (dateStr) => {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 };
 
+// --- UPDATED COLORS BASED ON UPLOADED IMAGE ---
 const COLOR_THEMES = [
-  { name: 'Blue',    main: '#0284c7', bg: '#e0f2fe' },
-  { name: 'Cyan',    main: '#0891b2', bg: '#cffafe' },
-  { name: 'Violet',  main: '#7c3aed', bg: '#ede9fe' },
-  { name: 'Indigo',  main: '#4f46e5', bg: '#e0e7ff' },
-  { name: 'Pink',    main: '#db2777', bg: '#fce7f3' },
-  { name: 'Emerald', main: '#059669', bg: '#d1fae5' },
-  { name: 'Orange',  main: '#ea580c', bg: '#ffedd5' },
-  { name: 'Slate',   main: '#475569', bg: '#f1f5f9' },
+  { name: 'Purple',  bg: '#ce9df7', main: '#8a4baf' },
+  { name: 'Blue',    bg: '#8cb5f7', main: '#4275d6' },
+  { name: 'Green',   bg: '#7fe0a2', main: '#40895e' },
+  { name: 'Sky',     bg: '#8bd9f5', main: '#3f7e9e' },
+  { name: 'Amber',   bg: '#efdf6b', main: '#b06929' },
+  { name: 'Red',     bg: '#ec8b82', main: '#bf463a' },
+  { name: 'Gray',    bg: '#9398a0', main: '#646871' },
 ];
 
 const INITIAL_TEAM = [
@@ -95,7 +136,12 @@ const App = () => {
 
   const [team, setTeam] = useState(() => {
     const saved = localStorage.getItem('planner_team');
-    return saved ? JSON.parse(saved) : INITIAL_TEAM;
+    // Map saved teams to new color structure if necessary, or default
+    if (saved) {
+      // Optional: logic to ensure saved colors match new themes could go here
+      return JSON.parse(saved);
+    }
+    return INITIAL_TEAM;
   });
 
   const [tasks, setTasks] = useState(() => {
@@ -113,8 +159,6 @@ const App = () => {
   const [resizingTask, setResizingTask] = useState(null);
   const isResizingRef = useRef(false);
   const fileInputRef = useRef(null);
-
-  // --- IMPORT / EXPORT LOGIC ---
 
   const handleExport = () => {
     const dataStr = JSON.stringify({ team, tasks, version: 1 }, null, 2);
@@ -155,10 +199,9 @@ const App = () => {
     event.target.value = null; // Reset input so same file can be selected again
   };
 
-  // --- HELPERS & HANDLERS ---
   const getSprintInfo = (date) => {
     const diffTime = date.getTime() - ANCHOR_DATE.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     const isSprintStart = diffDays % 14 === 0;
     let label = null;
     if (isSprintStart) {
@@ -170,8 +213,12 @@ const App = () => {
 
   const openMemberModal = (member = null) => {
     if (member) {
-      const colorIdx = COLOR_THEMES.findIndex(c => c.main === member.color.main);
-      setMemberForm({ id: member.id, name: member.name, role: member.role, colorIdx: colorIdx >= 0 ? colorIdx : 0 });
+      // Try to find the matching color from the new theme list
+      let colorIdx = COLOR_THEMES.findIndex(c => c.main === member.color.main);
+      // Fallback if the saved color doesn't exist in new themes
+      if (colorIdx === -1) colorIdx = 0;
+
+      setMemberForm({ id: member.id, name: member.name, role: member.role, colorIdx });
     } else {
       setMemberForm({ id: null, name: '', role: '', colorIdx: 0 });
     }
@@ -284,7 +331,15 @@ const App = () => {
   return (
     <S.Container>
       <S.Header>
-        <S.Title><Calendar size={24} /> Resource Planner</S.Title>
+        <S.HeaderLeft>
+          <S.Title><Calendar size={24} /> Resource Planner</S.Title>
+          <S.LegendContainer>
+            <span style={{ fontWeight: 600, marginRight: 4 }}>Bank Holidays:</span>
+            <S.LegendItem><S.LegendSwatch type="US"/> <span>USA</span></S.LegendItem>
+            <S.LegendItem><S.LegendSwatch type="IE"/> <span>Ireland</span></S.LegendItem>
+            <S.LegendItem><S.LegendSwatch type="UK"/> <span>UK</span></S.LegendItem>
+          </S.LegendContainer>
+        </S.HeaderLeft>
 
         <S.HeaderControls>
           <S.DateRangePicker>
@@ -293,21 +348,10 @@ const App = () => {
             <span>To:</span>
             <input type="date" value={viewRange.end} onChange={(e) => setViewRange({...viewRange, end: e.target.value})} />
           </S.DateRangePicker>
-
           <S.ButtonGroup>
-            <S.HeaderBtn onClick={handleExport}>
-              <Download size={16} /> Export
-            </S.HeaderBtn>
-            <S.HeaderBtn onClick={triggerImport}>
-              <Upload size={16} /> Import
-            </S.HeaderBtn>
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              accept=".json"
-              onChange={handleImportFile}
-            />
+            <S.HeaderBtn onClick={handleExport}><Download size={16} /> Export</S.HeaderBtn>
+            <S.HeaderBtn onClick={triggerImport}><Upload size={16} /> Import</S.HeaderBtn>
+            <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".json" onChange={handleImportFile} />
           </S.ButtonGroup>
         </S.HeaderControls>
       </S.Header>
@@ -318,12 +362,12 @@ const App = () => {
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {team.map(member => (
               <S.SidebarRow key={member.id}>
-                <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => openMemberModal(member)}>
+                <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flex: 1, minWidth: 0 }} onClick={() => openMemberModal(member)}>
                   <S.Avatar color={member.color}>{member.name.charAt(0)}</S.Avatar>
-                  <div style={{ lineHeight: 1.2 }}>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 500 }}>{member.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{member.role}</div>
-                  </div>
+                  <S.MemberInfo>
+                    <S.MemberName title={member.name}>{member.name}</S.MemberName>
+                    <S.MemberRole title={member.role}>{member.role}</S.MemberRole>
+                  </S.MemberInfo>
                 </div>
                 <S.ActionBtnGroup className="actions">
                   <S.ActionBtn hoverBg="#e0e7ff" hoverColor="#4f46e5" onClick={() => openMemberModal(member)}><Pencil size={14} /></S.ActionBtn>
@@ -341,18 +385,36 @@ const App = () => {
               {dates.map((date, index) => {
                 const { isSprintStart, label } = getSprintInfo(date);
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                const holidayType = getHolidayType(date);
                 return (
-                  <S.DayHeaderCell key={index} isSprintStart={isSprintStart} sprintLabel={label} isWeekend={isWeekend}>
+                  <S.DayHeaderCell
+                    key={index}
+                    isSprintStart={isSprintStart}
+                    sprintLabel={label}
+                    isWeekend={isWeekend}
+                    holidayType={holidayType}
+                  >
                     <span>{isSprintStart ? formatDate(date) : date.getDate()}</span>
                   </S.DayHeaderCell>
                 );
               })}
             </S.TimelineHeader>
+
             {team.map(member => (
               <S.TimelineRow key={member.id} totalDays={totalDays} onDragOver={onDragOver} onDrop={(e) => onDropRow(e, member.id)}>
                 {dates.map((date, index) => {
                   const { isSprintStart } = getSprintInfo(date);
-                  return <S.GridCell key={index} isSprintStart={isSprintStart} onClick={() => handleAddTask(member.id, index)} />;
+                  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                  const holidayType = getHolidayType(date);
+                  return (
+                    <S.GridCell
+                      key={index}
+                      isSprintStart={isSprintStart}
+                      isWeekend={isWeekend}
+                      holidayType={holidayType}
+                      onClick={() => handleAddTask(member.id, index)}
+                    />
+                  );
                 })}
                 {tasks.filter(t => t.resourceId === member.id).map(task => {
                   const viewStartIndex = getViewIndexFromStorageIndex(viewRange.start, task.startIdx);
@@ -371,7 +433,7 @@ const App = () => {
         </S.TimelineScrollArea>
       </S.PlannerLayout>
 
-      {/* --- MODALS (Unchanged) --- */}
+      {/* MODALS UNCHANGED */}
       {isMemberModalOpen && (
         <S.ModalOverlay onClick={() => setIsMemberModalOpen(false)}>
           <S.ModalContent onClick={e => e.stopPropagation()}>
@@ -385,7 +447,6 @@ const App = () => {
           </S.ModalContent>
         </S.ModalOverlay>
       )}
-
       {isModalOpen && editingTask && (
         <S.ModalOverlay onClick={() => setIsModalOpen(false)}>
           <S.ModalContent onClick={e => e.stopPropagation()}>
@@ -406,5 +467,4 @@ const App = () => {
     </S.Container>
   );
 };
-
 export default App;
