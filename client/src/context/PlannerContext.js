@@ -6,16 +6,25 @@ import { getCurrentQuarter, generateDateRange } from '../utils/dateUtils';
 const PlannerContext = createContext();
 
 export const PlannerProvider = ({ children }) => {
-  // --- View State ---
   const [viewRange, setViewRange] = useState(getCurrentQuarter());
 
-  // Memoized date generation
+  // --- NEW: Track "Today" automatically ---
+  const [today, setToday] = useState(new Date());
+
+  useEffect(() => {
+    // Check for date change every minute
+    const timer = setInterval(() => {
+      setToday(new Date());
+    }, 60000); // 60 seconds
+    return () => clearInterval(timer);
+  }, []);
+  // ----------------------------------------
+
   const { dates, totalDays } = useMemo(() =>
       generateDateRange(viewRange.start, viewRange.end),
     [viewRange]
   );
 
-  // --- Data State (with Persistence) ---
   const [team, setTeam] = useState(() => {
     const saved = localStorage.getItem('planner_team');
     return saved ? JSON.parse(saved) : INITIAL_TEAM;
@@ -26,75 +35,37 @@ export const PlannerProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : INITIAL_TASKS;
   });
 
-  // Persistence Effects
   useEffect(() => { localStorage.setItem('planner_team', JSON.stringify(team)); }, [team]);
   useEffect(() => { localStorage.setItem('planner_tasks', JSON.stringify(tasks)); }, [tasks]);
 
-  // --- Actions ---
-
-  const addMember = (newMember) => {
-    setTeam(prev => [...prev, newMember]);
-  };
-
-  const updateMember = (updatedMember) => {
-    setTeam(prev => prev.map(m => m.id === updatedMember.id ? updatedMember : m));
-  };
-
+  // Actions (same as before)
+  const addMember = (newMember) => setTeam(prev => [...prev, newMember]);
+  const updateMember = (updatedMember) => setTeam(prev => prev.map(m => m.id === updatedMember.id ? updatedMember : m));
   const deleteMember = (id) => {
     setTeam(prev => prev.filter(m => m.id !== id));
-    setTasks(prev => prev.filter(t => t.resourceId !== id)); // Cascade delete
+    setTasks(prev => prev.filter(t => t.resourceId !== id));
   };
-
-  const addTask = (newTask) => {
-    setTasks(prev => [...prev, newTask]);
-  };
-
-  const updateTask = (updatedTask) => {
-    setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
-  };
-
-  const deleteTask = (id) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
-  };
-
-  const importData = (importedTeam, importedTasks) => {
-    setTeam(importedTeam);
-    setTasks(importedTasks);
-  };
+  const addTask = (newTask) => setTasks(prev => [...prev, newTask]);
+  const updateTask = (updatedTask) => setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+  const deleteTask = (id) => setTasks(prev => prev.filter(t => t.id !== id));
+  const importData = (importedTeam, importedTasks) => { setTeam(importedTeam); setTasks(importedTasks); };
 
   const value = {
-    // State
     viewRange,
     dates,
     totalDays,
     team,
     tasks,
-    // Setters
+    today, // Expose today to consumers
     setViewRange,
-    // Actions
-    actions: {
-      addMember,
-      updateMember,
-      deleteMember,
-      addTask,
-      updateTask,
-      deleteTask,
-      importData
-    }
+    actions: { addMember, updateMember, deleteMember, addTask, updateTask, deleteTask, importData }
   };
 
-  return (
-    <PlannerContext.Provider value={value}>
-      {children}
-    </PlannerContext.Provider>
-  );
+  return <PlannerContext.Provider value={value}>{children}</PlannerContext.Provider>;
 };
 
-// Custom Hook for easy access
 export const usePlanner = () => {
   const context = useContext(PlannerContext);
-  if (!context) {
-    throw new Error('usePlanner must be used within a PlannerProvider');
-  }
+  if (!context) throw new Error('usePlanner must be used within a PlannerProvider');
   return context;
 };

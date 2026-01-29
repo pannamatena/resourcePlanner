@@ -181,6 +181,15 @@ export const TimelineRow = styled.div`
 
 /* --- COMPONENTS --- */
 
+export const TodayLabel = styled.span`
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #ef4444; /* Red Text */
+  margin-bottom: 2px;
+  letter-spacing: 0.5px;
+`;
+
 export const DayHeaderCell = styled.div`
   width: ${DAY_WIDTH}px;
   flex-shrink: 0;
@@ -194,20 +203,32 @@ export const DayHeaderCell = styled.div`
   font-weight: 600;
   position: relative;
   
-  color: ${props => props.isWeekend ? '#475569' : '#64748b'};
+  /* Text Color */
+  color: ${props => {
+  if (props.isToday) return '#ef4444'; // Red
+  if (props.isWeekend) return '#475569';
+  return '#64748b';
+}};
+  
+  /* Background Color */
   background-color: ${props => {
+  if (props.isToday) return '#fee2e2'; // Light Red Bg
   if (props.holidayType === 'US') return '#fee2e2';
   if (props.holidayType === 'IE') return '#dcfce7';
   if (props.holidayType === 'UK') return '#dbeafe';
   if (props.isWeekend) return '#e2e8f0';
   return 'transparent';
 }};
+
+  /* Top Border Highlight */
   border-top: ${props => {
+  if (props.isToday) return '4px solid #ef4444'; // Red Top Border
   if (props.holidayType === 'US') return '4px solid #ef4444';
   if (props.holidayType === 'IE') return '4px solid #22c55e';
   if (props.holidayType === 'UK') return '4px solid #3b82f6';
   return 'none';
 }};
+
   border-left: ${props => props.isSprintStart ? '2px solid #6366f1' : 'none'};
 
   &::before {
@@ -233,7 +254,10 @@ export const GridCell = styled.div`
   border-right: 1px solid #f1f5f9;
   cursor: pointer;
   transition: background-color 0.2s;
+  
+  /* Column Background */
   background-color: ${props => {
+  if (props.isToday) return '#fef2f2'; // Very Light Red
   if (props.holidayType === 'US') return '#fef2f2';
   if (props.holidayType === 'IE') return '#f0fdf4';
   if (props.holidayType === 'UK') return '#eff6ff';
@@ -241,7 +265,14 @@ export const GridCell = styled.div`
   if (props.isSprintStart) return '#f8fafc';
   return 'transparent';
 }};
-  border-left: ${props => props.isSprintStart ? '2px solid #e2e8f0' : 'none'};
+  
+  /* Vertical Marker Line */
+  border-left: ${props => {
+  if (props.isToday) return '2px solid #f87171'; // Solid Red Line
+  if (props.isSprintStart) return '2px solid #e2e8f0';
+  return 'none';
+}};
+
   &:hover { background-color: #e0e7ff; }
 `;
 
