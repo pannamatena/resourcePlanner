@@ -44,6 +44,7 @@ Runs the app in development mode.
 cd client
 npm start
 ```
+
 ###Project Architecture
 The application has been refactored from a single file into a scalable, domain-driven structure:
 
