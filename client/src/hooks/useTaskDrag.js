@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { usePlanner } from '../context/PlannerContext';
-import { DAY_WIDTH } from '../Style'; // or utils/constants
+import { DAY_WIDTH } from '../utils/constants'; // Adjusted path if needed
 import { getStorageIndexFromViewIndex } from '../utils/dateUtils';
 
 export const useTaskDrag = () => {
-  const { viewRange, totalDays, actions } = usePlanner();
+  const { viewRange, actions } = usePlanner();
 
   // Resize State
   const [resizingTask, setResizingTask] = useState(null);
-  const isResizingRef = useRef(false); // Flag to prevent drag conflicts
+  const isResizingRef = useRef(false);
 
   // --- DRAG (MOVE) HANDLERS ---
   const onDragStart = (e, task) => {
@@ -17,8 +17,6 @@ export const useTaskDrag = () => {
       return;
     }
     e.dataTransfer.setData('taskId', task.id);
-
-    // Calculate where inside the bar the user clicked
     const rect = e.target.getBoundingClientRect();
     const clickOffset = Math.floor((e.clientX - rect.left) / DAY_WIDTH);
     e.dataTransfer.setData('clickOffset', clickOffset);
@@ -35,19 +33,12 @@ export const useTaskDrag = () => {
     if (!taskId) return;
 
     const clickOffset = parseInt(e.dataTransfer.getData('clickOffset'));
-
-    // Calculate new position relative to the row
     const rowRect = e.currentTarget.getBoundingClientRect();
     const dropPixelX = e.clientX - rowRect.left;
     const dropViewIndex = Math.floor(dropPixelX / DAY_WIDTH);
-
-    // Adjust start index based on click offset
     const newStartViewIndex = dropViewIndex - clickOffset;
-
-    // Convert View Index (relative to scroll) -> Storage Index (relative to Anchor)
     const newStorageIdx = getStorageIndexFromViewIndex(viewRange.start, newStartViewIndex);
 
-    // Call Context Action
     actions.updateTask({
       id: taskId,
       resourceId: memberId,
@@ -63,18 +54,15 @@ export const useTaskDrag = () => {
     setResizingTask({ id: task.id, initialX: e.clientX, initialDuration: task.duration });
   };
 
-  // Global Listeners for Resize
   useEffect(() => {
     const handleGlobalMouseMove = (e) => {
       if (!resizingTask) return;
 
       const deltaPixels = e.clientX - resizingTask.initialX;
       const deltaDays = Math.round(deltaPixels / DAY_WIDTH);
-
       let newDuration = resizingTask.initialDuration + deltaDays;
       if (newDuration < 1) newDuration = 1;
 
-      // Optimistic UI update via Context
       actions.updateTask({
         id: resizingTask.id,
         duration: newDuration
@@ -84,7 +72,7 @@ export const useTaskDrag = () => {
     const handleGlobalMouseUp = () => {
       if (resizingTask) {
         setResizingTask(null);
-        // Small timeout to prevent the "Click" event from firing on the task immediately after resize
+        // Timeout ensures we don't trigger 'onClick' immediately after releasing mouse
         setTimeout(() => { isResizingRef.current = false; }, 100);
       }
     };
@@ -104,6 +92,6 @@ export const useTaskDrag = () => {
     onDragOver,
     onDropRow,
     onResizeStart,
-    isResizing: isResizingRef.current
+    isResizingRef // <--- RETURN THE REF ITSELF
   };
 };

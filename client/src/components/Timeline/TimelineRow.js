@@ -6,13 +6,15 @@ import { getSprintInfo, getHolidayType, getViewIndexFromStorageIndex, isSameDay 
 import * as S from '../../Style';
 
 export const TimelineRow = ({ member, onEditTask, onAddTask }) => {
-  const { dates, tasks, totalDays, viewRange, today } = usePlanner(); // Get 'today'
-  const { onDragStart, onDragOver, onDropRow, onResizeStart, isResizing } = useTaskDrag();
+  const { dates, tasks, totalDays, viewRange, today } = usePlanner();
+  // Destructure the Ref here
+  const { onDragStart, onDragOver, onDropRow, onResizeStart, isResizingRef } = useTaskDrag();
 
   const memberTasks = tasks.filter(t => t.resourceId === member.id);
 
   const handleCellClick = (index) => {
-    if (isResizing) return;
+    // Check .current property
+    if (isResizingRef.current) return;
     onAddTask(member.id, index);
   };
 
@@ -26,7 +28,7 @@ export const TimelineRow = ({ member, onEditTask, onAddTask }) => {
         const { isSprintStart } = getSprintInfo(date);
         const isWeekend = date.getDay() === 0 || date.getDay() === 6;
         const holidayType = getHolidayType(date);
-        const isToday = isSameDay(date, today); // Check
+        const isToday = isSameDay(date, today);
 
         return (
           <S.GridCell
@@ -34,7 +36,7 @@ export const TimelineRow = ({ member, onEditTask, onAddTask }) => {
             isSprintStart={isSprintStart}
             isWeekend={isWeekend}
             holidayType={holidayType}
-            isToday={isToday} // Pass Prop
+            isToday={isToday}
             onClick={() => handleCellClick(index)}
           />
         );
@@ -50,7 +52,11 @@ export const TimelineRow = ({ member, onEditTask, onAddTask }) => {
             startIndex={viewStartIndex}
             duration={task.duration}
             color={member.color}
-            onClick={(e) => { e.stopPropagation(); if(!isResizing) onEditTask(task); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              // Check .current property here to get the "Live" value
+              if(!isResizingRef.current) onEditTask(task);
+            }}
             draggable
             onDragStart={(e) => onDragStart(e, task)}
           >
