@@ -45,11 +45,11 @@ cd client
 npm start
 ```
 
-###Project Architecture
+### Project Architecture
 The application has been refactored from a single file into a scalable, domain-driven structure:
 
-`client/src/`
 ```plaintext
+client/src/
 ├── components/
 │   ├── Header/          # Controls for Date Range, Import/Export, and Legend
 │   ├── Modals/          # Forms for Adding/Editing Tasks and Members
@@ -67,7 +67,7 @@ The application has been refactored from a single file into a scalable, domain-d
 └── App.js                # Application Entry Point
 ```
 
-###Key Decisions
+### Key Decisions
 **Context API:** Used for global state management to avoid "prop drilling" and make actions (addTask, deleteMember) accessible anywhere.
 
 **Custom Hooks:** The Drag-and-Drop logic (useTaskDrag) is isolated from the UI components to keep the rendering logic clean and performant.
@@ -76,7 +76,7 @@ The application has been refactored from a single file into a scalable, domain-d
 
 **Sticky Positioning:** The Timeline Header and Sidebar Column use position: sticky to remain visible while scrolling through large date ranges.
 
-###Technologies Used
+### Technologies Used
 React 19: Core framework.
 
 Emotion: CSS-in-JS for styling.
