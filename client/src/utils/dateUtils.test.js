@@ -3,7 +3,8 @@ import {
   getSprintInfo,
   getStorageIndexFromDateString,
   getDateStringFromStorageIndex,
-  generateDateRange
+  generateDateRange,
+  isSameDay
 } from './dateUtils';
 
 import { ANCHOR_DATE } from './constants';
@@ -59,5 +60,14 @@ describe('Date Utilities', () => {
     expect(totalDays).toBe(5);
     expect(dates[0].toISOString().split('T')[0]).toBe('2026-01-01');
     expect(dates[4].toISOString().split('T')[0]).toBe('2026-01-05');
+  });
+
+  test('isSameDay correctly identifies dates', () => {
+    const d1 = new Date('2026-01-01T10:00:00');
+    const d2 = new Date('2026-01-01T22:00:00'); // Same day, different time
+    const d3 = new Date('2026-01-02T10:00:00'); // Different day
+
+    expect(isSameDay(d1, d2)).toBe(true);
+    expect(isSameDay(d1, d3)).toBe(false);
   });
 });

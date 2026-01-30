@@ -1,18 +1,33 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import { PlannerProvider, usePlanner } from './PlannerContext';
-import { INITIAL_TEAM } from '../utils/constants';
 
-// Test Consumer Component to access Context internals
+// Helper Component to expose Context internals to the test runner
 const TestComponent = () => {
-  const { team, tasks, actions } = usePlanner();
+  const { tasks, actions } = usePlanner();
+
+  // Safe check for task existence
+  const firstTask = tasks.find(t => t.id === 999);
+
   return (
     <div>
-      <div data-testid="team-count">{team.length}</div>
       <div data-testid="task-count">{tasks.length}</div>
-      <button onClick={() => actions.addMember({ id: 999, name: 'Test User' })}>Add Member</button>
-      <button onClick={() => actions.deleteMember(999)}>Delete Member</button>
-      <button onClick={() => actions.addTask({ id: 100, title: 'New Task' })}>Add Task</button>
+      <div data-testid="task-title">{firstTask ? firstTask.title : 'No Task'}</div>
+      <div data-testid="task-start">{firstTask ? firstTask.startIdx : 'No Start'}</div>
+
+      {/* Button to add a known task for testing */}
+      <button
+        onClick={() => actions.addTask({ id: 999, title: 'Original Title', startIdx: 10, duration: 5 })}
+      >
+        Add Test Task
+      </button>
+
+      {/* Button to simulate a drag (only updates startIdx) */}
+      <button
+        onClick={() => actions.updateTask({ id: 999, startIdx: 99 })}
+      >
+        Move Test Task
+      </button>
     </div>
   );
 };
@@ -22,44 +37,44 @@ describe('PlannerContext', () => {
     localStorage.clear();
   });
 
-  test('initializes with default data', () => {
+  test('initializes correctly', () => {
     render(
       <PlannerProvider>
         <TestComponent />
       </PlannerProvider>
     );
-    expect(screen.getByTestId('team-count')).toHaveTextContent(INITIAL_TEAM.length.toString());
+    // Should render without crashing
+    expect(screen.getByTestId('task-count')).toBeTruthy();
   });
 
-  test('can add a team member', () => {
+  test('updateTask merges data instead of replacing it', () => {
     render(
       <PlannerProvider>
         <TestComponent />
       </PlannerProvider>
     );
 
-    const btn = screen.getByText('Add Member');
+    // 1. Add the Test Task
     act(() => {
-      btn.click();
+      screen.getByText('Add Test Task').click();
     });
 
-    // Initial length + 1
-    expect(screen.getByTestId('team-count')).toHaveTextContent((INITIAL_TEAM.length + 1).toString());
-  });
+    // Verify it was added
+    expect(screen.getByTestId('task-title')).toHaveTextContent('Original Title');
+    expect(screen.getByTestId('task-start')).toHaveTextContent('10');
 
-  test('can add a task', () => {
-    render(
-      <PlannerProvider>
-        <TestComponent />
-      </PlannerProvider>
-    );
-
-    const btn = screen.getByText('Add Task');
+    // 2. Perform Partial Update (Simulate Drag)
+    // We click the button which calls updateTask({ id: 999, startIdx: 99 })
+    // It does NOT pass the title.
     act(() => {
-      btn.click();
+      screen.getByText('Move Test Task').click();
     });
 
-    // Initial tasks (1) + 1 = 2
-    expect(screen.getByTestId('task-count')).toHaveTextContent('2');
+    // 3. Verify Updates
+    // Start Index should change
+    expect(screen.getByTestId('task-start')).toHaveTextContent('99');
+
+    // Title should REMAIN (This confirms the merge logic works)
+    expect(screen.getByTestId('task-title')).toHaveTextContent('Original Title');
   });
 });

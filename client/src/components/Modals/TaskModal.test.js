@@ -1,0 +1,62 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { TaskModal } from './TaskModal';
+import { getDateStringFromStorageIndex } from '../../utils/dateUtils';
+
+// Mock the context
+const mockActions = {
+  updateTask: jest.fn(),
+  addTask: jest.fn(),
+  deleteTask: jest.fn(),
+};
+
+// Mock PlannerContext
+jest.mock('../../context/PlannerContext', () => ({
+  usePlanner: () => ({
+    actions: mockActions,
+  }),
+}));
+
+describe('TaskModal Logic', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('Save calculates inclusive duration (Start=End implies 1 day)', () => {
+    // We need real dates for the form inputs to work, so we calculate them dynamically
+    // based on whatever your project's ANCHOR_DATE is.
+    const startStr = getDateStringFromStorageIndex(0); // Index 0
+
+    const task = { id: 1, title: 'Test', startIdx: 0, duration: 1 };
+    render(<TaskModal task={task} onClose={() => {}} />);
+
+    const startInput = screen.getByLabelText('Start Date');
+    const endInput = screen.getByLabelText('End Date');
+
+    // Set Start and End to the SAME day
+    fireEvent.change(startInput, { target: { value: startStr } });
+    fireEvent.change(endInput, { target: { value: startStr } });
+
+    fireEvent.click(screen.getByText('Save Changes'));
+
+    expect(mockActions.updateTask).toHaveBeenCalledWith(expect.objectContaining({
+      duration: 1
+    }));
+  });
+
+  test('Displays correct end date (Duration 5 ends on Day 5, not Day 6)', () => {
+    // Logic Check:
+    // If Start is Index 0 and Duration is 5, the task covers indices: 0, 1, 2, 3, 4.
+    // The End Date should be Index 4.
+    const expectedEndDate = getDateStringFromStorageIndex(4);
+
+    const task = { id: 1, title: 'Test', startIdx: 0, duration: 5 };
+
+    render(<TaskModal task={task} onClose={() => {}} />);
+
+    const endInput = screen.getByLabelText('End Date');
+
+    // Compare the input value to the calculated date string
+    expect(endInput.value).toBe(expectedEndDate);
+  });
+});
