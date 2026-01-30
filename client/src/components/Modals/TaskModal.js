@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link as LinkIcon, X, ExternalLink, Plane } from 'lucide-react';
+import { Link as LinkIcon, X, ExternalLink, Plane, Copy } from 'lucide-react';
 import { usePlanner } from '../../context/PlannerContext';
 import { getStorageIndexFromDateString, getDateStringFromStorageIndex } from '../../utils/dateUtils';
 import * as S from '../../Style';
@@ -64,6 +64,30 @@ export const TaskModal = ({ task, onClose }) => {
     if (task && !task._isNew) {
       actions.deleteTask(task.id);
     }
+    onClose();
+  };
+
+  const handleDuplicate = () => {
+    if (task._isNew) return; // Cannot duplicate an unsaved task
+
+    // 1. Calculate new start (Immediately after original ends)
+    const originalStartIdx = getStorageIndexFromDateString(formData.startStr);
+    const currentDuration = (getStorageIndexFromDateString(formData.endStr) - originalStartIdx) + 1;
+    const newStartIdx = originalStartIdx + currentDuration;
+
+    // 2. Create New Task Object
+    const newTask = {
+      id: Date.now(), // Generate new ID
+      resourceId: task.resourceId,
+      title: formData.title + ' (Copy)', // Optional: Add label
+      startIdx: newStartIdx,
+      duration: currentDuration,
+      url: formData.url,
+      isOOO: formData.isOOO
+    };
+
+    // 3. Save and Close
+    actions.addTask(newTask);
     onClose();
   };
 
@@ -172,7 +196,19 @@ export const TaskModal = ({ task, onClose }) => {
           {/* 5. BUTTONS */}
           <S.ButtonRow>
             <S.Button variant="danger" onClick={handleDelete}>Delete</S.Button>
-            <S.Button variant="primary" onClick={handleSave}>Save Changes</S.Button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {!task._isNew && (
+                <S.Button
+                  type="button"
+                  onClick={handleDuplicate}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#f1f5f9', color: '#475569' }}
+                >
+                  <Copy size={14} /> Duplicate
+                </S.Button>
+              )}
+
+              <S.Button variant="primary" onClick={handleSave}>Save Changes</S.Button>
+            </div>
           </S.ButtonRow>
         </div>
       </S.ModalContent>

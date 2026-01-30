@@ -78,4 +78,57 @@ describe('TaskModal Logic', () => {
       title: 'OOO'
     }));
   });
+
+  test('Duplicate creates a copy starting immediately after the original', () => {
+    // Setup: Task starts at Index 0 (Jan 1) with Duration 5.
+    // It occupies Jan 1, 2, 3, 4, 5.
+    // The duplicate should start on Jan 6 (Index 5).
+    const task = { id: 1, title: 'Original', startIdx: 0, duration: 5, _isNew: false };
+
+    render(<TaskModal task={task} onClose={() => {}} />);
+
+    // Click Duplicate
+    const duplicateBtn = screen.getByText('Duplicate');
+    fireEvent.click(duplicateBtn);
+
+    // Verify 'addTask' was called
+    expect(mockActions.addTask).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Original (Copy)', // Optional: Check for label if you added it
+      startIdx: 5,              // Crucial: 0 + 5 = 5
+      duration: 5,              // Same duration
+      id: expect.any(Number)    // New ID generated
+    }));
+  });
+
+  test('Duplicate preserves OOO status and URL', () => {
+    const task = {
+      id: 1,
+      title: 'OOO',
+      startIdx: 10,
+      duration: 1,
+      isOOO: true,
+      url: 'http://docs.com',
+      _isNew: false
+    };
+
+    render(<TaskModal task={task} onClose={() => {}} />);
+
+    fireEvent.click(screen.getByText('Duplicate'));
+
+    expect(mockActions.addTask).toHaveBeenCalledWith(expect.objectContaining({
+      isOOO: true,
+      url: 'http://docs.com'
+    }));
+  });
+
+  test('Duplicate button is hidden for new tasks', () => {
+    // Setup: Creating a NEW task
+    const task = { id: 1, title: '', startIdx: 0, duration: 1, _isNew: true };
+
+    render(<TaskModal task={task} onClose={() => {}} />);
+
+    // Query for the button - it should NOT exist
+    const duplicateBtn = screen.queryByText('Duplicate');
+    expect(duplicateBtn).toBeNull();
+  });
 });
