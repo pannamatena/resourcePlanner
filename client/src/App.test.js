@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
 
 // Mock scrollIntoView because JSDOM doesn't support it
@@ -13,63 +13,63 @@ describe('App Integration', () => {
   test('renders header and resource planner title', () => {
     render(<App />);
     const linkElement = screen.getByText(/Resource Planner/i);
-    expect(linkElement).toBeInTheDocument();
+    expect(linkElement).toBeTruthy();
   });
 
   test('opens Add Member modal when button is clicked', () => {
     render(<App />);
-
-    // Find the button (there might be multiple icons, look for text)
     const addBtn = screen.getByText('Add Member');
     fireEvent.click(addBtn);
-
-    // Check if modal header appears
-    expect(screen.getByText('Add Team Member')).toBeInTheDocument();
+    expect(screen.getByText('Add Team Member')).toBeTruthy();
   });
 
   test('can add a new team member via UI', () => {
     render(<App />);
 
     // 1. Open Modal
-    fireEvent.click(screen.getByText('Add Member'));
+    // We use getAllByText to handle cases where multiple might exist,
+    // but initially, the sidebar button is usually the first/only one.
+    const sidebarBtns = screen.getAllByText('Add Member');
+    fireEvent.click(sidebarBtns[0]);
 
     // 2. Fill Form
-    const nameInput = screen.getByDisplayValue(''); // Empty input
-    const roleInput = screen.getAllByRole('textbox')[1]; // Assume second input is role
+    const inputs = screen.getAllByRole('textbox');
+    const nameInput = inputs[0]; // Name is first input
+    const roleInput = inputs[1]; // Role is second input
 
     fireEvent.change(nameInput, { target: { value: 'John Doe' } });
     fireEvent.change(roleInput, { target: { value: 'Developer' } });
 
-    // 3. Click Save (Primary Button)
-    const saveBtn = screen.getByText('Add Member', { selector: 'button' }); // The button inside modal
-    fireEvent.click(saveBtn);
+    // 3. Click Save
+    // Now that the modal is open, there are TWO "Add Member" buttons.
+    // The Sidebar button is index 0. The Modal button is index 1 (rendered last).
+    const allAddBtns = screen.getAllByText('Add Member');
+    const modalSaveBtn = allAddBtns[allAddBtns.length - 1];
 
-    // 4. Verify John Doe appears in sidebar
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('Developer')).toBeInTheDocument();
+    fireEvent.click(modalSaveBtn);
+
+    // 4. Verify
+    expect(screen.getByText('John Doe')).toBeTruthy();
+    expect(screen.getByText('Developer')).toBeTruthy();
   });
 
   test('can delete a team member', () => {
-    // Mock window.confirm
     window.confirm = jest.fn(() => true);
-
     render(<App />);
 
-    // Find the first member (Dan from defaults)
-    const danElement = screen.getByText('Dan');
-    expect(danElement).toBeInTheDocument();
+    // Ensure Dan exists (from initial data)
+    expect(screen.getByText('Dan')).toBeTruthy();
 
-    // Find the Delete button associated with this row.
-    // In our styled components, it's a bit tricky to select by icon alone.
-    // We will look for the trash icon within the sidebar.
-    // Note: This relies on the fact that 'Dan' is the first item.
-
+    // Find all delete buttons in the sidebar
+    // We select the last button in the .actions div
     const deleteButtons = document.querySelectorAll('.actions button:last-child');
-    // Click the first delete button
+
+    // Click the first one (Dan's row)
     fireEvent.click(deleteButtons[0]);
 
     expect(window.confirm).toHaveBeenCalled();
-    // Verify Dan is gone
-    expect(screen.queryByText('Dan')).not.toBeInTheDocument();
+
+    // Verify Dan is gone (queryByText returns null if not found)
+    expect(screen.queryByText('Dan')).toBeNull();
   });
 });

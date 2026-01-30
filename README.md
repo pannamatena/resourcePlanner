@@ -32,9 +32,9 @@ A modern, interactive React application for managing team resources, allocating 
     ```
 3.  Install dependencies:
     ```bash
-    npm install
+    yarn install
     ```
-    *(Note: If you encounter dependency conflicts with React 19, try `npm install --legacy-peer-deps`)*
+    *(Note: If you encounter dependency conflicts with React 19, try `yarn install --legacy-peer-deps`)*
 
 ### Running the App
 
@@ -42,7 +42,7 @@ Runs the app in development mode.
 ```bash
 # Ensure you are in the client folder
 cd client
-npm start
+yarn start
 ```
 
 ### Project Architecture

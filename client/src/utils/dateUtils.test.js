@@ -3,9 +3,10 @@ import {
   getSprintInfo,
   getStorageIndexFromDateString,
   getDateStringFromStorageIndex,
-  generateDateRange,
-  ANCHOR_DATE
+  generateDateRange
 } from './dateUtils';
+
+import { ANCHOR_DATE } from './constants';
 
 describe('Date Utilities', () => {
 
