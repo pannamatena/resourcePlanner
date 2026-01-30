@@ -52,16 +52,17 @@ export const TimelineRow = ({ member, onEditTask, onAddTask }) => {
             startIndex={viewStartIndex}
             duration={task.duration}
             color={member.color}
+            isOOO={task.isOOO} // <--- PASS THE PROP
             onClick={(e) => {
               e.stopPropagation();
-              // Check .current property here to get the "Live" value
               if(!isResizingRef.current) onEditTask(task);
             }}
             draggable
             onDragStart={(e) => onDragStart(e, task)}
           >
             <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</div>
-            {task.url && <LinkIcon size={12} style={{ marginLeft: 4, opacity: 0.5 }} />}
+            {/* Only show Link icon if it's NOT OOO and has a URL */}
+            {!task.isOOO && task.url && <LinkIcon size={12} style={{ marginLeft: 4, opacity: 0.5 }} />}
             <S.ResizeHandle onMouseDown={(e) => onResizeStart(e, task)} />
           </S.TaskBar>
         );

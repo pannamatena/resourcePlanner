@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link as LinkIcon, X, ExternalLink } from 'lucide-react';
+import { Link as LinkIcon, X, ExternalLink, Plane } from 'lucide-react';
 import { usePlanner } from '../../context/PlannerContext';
 import { getStorageIndexFromDateString, getDateStringFromStorageIndex } from '../../utils/dateUtils';
 import * as S from '../../Style';
@@ -11,7 +11,8 @@ export const TaskModal = ({ task, onClose }) => {
     title: '',
     startStr: '',
     endStr: '',
-    url: ''
+    url: '',
+    isOOO: false
   });
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export const TaskModal = ({ task, onClose }) => {
       setFormData({
         title: task.title,
         url: task.url || '',
+        isOOO: task.isOOO || false,
         startStr,
         endStr
       });
@@ -40,10 +42,12 @@ export const TaskModal = ({ task, onClose }) => {
 
     const taskData = {
       ...task,
-      title: formData.title,
+      // Auto-set title to 'OOO' if empty and OOO flag is checked
+      title: formData.title || (formData.isOOO ? 'OOO' : 'New Task'),
       url: formData.url,
       startIdx: newStartIdx,
-      duration: newDuration
+      duration: newDuration,
+      isOOO: formData.isOOO
     };
 
     if (task._isNew) {
@@ -63,6 +67,15 @@ export const TaskModal = ({ task, onClose }) => {
     onClose();
   };
 
+  const toggleOOO = (e) => {
+    const isChecked = e.target.checked;
+    setFormData(prev => ({
+      ...prev,
+      isOOO: isChecked,
+      title: (isChecked && !prev.title) ? 'OOO' : prev.title
+    }));
+  };
+
   if (!task) return null;
 
   return (
@@ -74,7 +87,8 @@ export const TaskModal = ({ task, onClose }) => {
         </S.ModalHeader>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* TITLE INPUT */}
+
+          {/* 1. TITLE INPUT */}
           <S.InputGroup>
             <label htmlFor="task-title">Task Title</label>
             <input
@@ -82,11 +96,12 @@ export const TaskModal = ({ task, onClose }) => {
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({...formData, title: e.target.value})}
+              placeholder={formData.isOOO ? "e.g., Vacation, Sick Leave" : "Task Name"}
             />
           </S.InputGroup>
 
+          {/* 2. DATE INPUTS */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            {/* START DATE */}
             <S.InputGroup>
               <label htmlFor="task-start">Start Date</label>
               <input
@@ -96,8 +111,6 @@ export const TaskModal = ({ task, onClose }) => {
                 onChange={(e) => setFormData({...formData, startStr: e.target.value})}
               />
             </S.InputGroup>
-
-            {/* END DATE */}
             <S.InputGroup>
               <label htmlFor="task-end">End Date</label>
               <input
@@ -109,25 +122,27 @@ export const TaskModal = ({ task, onClose }) => {
             </S.InputGroup>
           </div>
 
-          {/* URL INPUT */}
-          <S.InputGroup>
-            <label htmlFor="task-url">Jira/Doc URL</label>
-            <div style={{ display: 'flex' }}>
-              <span style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRight: 0, borderRadius: '4px 0 0 4px', padding: '8px', display: 'flex', alignItems: 'center' }}>
-                <LinkIcon size={16} color="#64748b"/>
-              </span>
-              <input
-                id="task-url"
-                type="text"
-                placeholder="https://..."
-                value={formData.url}
-                onChange={(e) => setFormData({...formData, url: e.target.value})}
-                style={{ borderRadius: '0 4px 4px 0', width: '100%' }}
-              />
-            </div>
-          </S.InputGroup>
+          {/* 3. URL INPUT (Hidden if OOO) */}
+          {!formData.isOOO && (
+            <S.InputGroup>
+              <label htmlFor="task-url">Jira/Doc URL</label>
+              <div style={{ display: 'flex' }}>
+                <span style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRight: 0, borderRadius: '4px 0 0 4px', padding: '8px', display: 'flex', alignItems: 'center' }}>
+                    <LinkIcon size={16} color="#64748b"/>
+                </span>
+                <input
+                  id="task-url"
+                  type="text"
+                  placeholder="https://..."
+                  value={formData.url}
+                  onChange={(e) => setFormData({...formData, url: e.target.value})}
+                  style={{ borderRadius: '0 4px 4px 0', width: '100%' }}
+                />
+              </div>
+            </S.InputGroup>
+          )}
 
-          {formData.url && (
+          {!formData.isOOO && formData.url && (
             <div style={{ marginTop: '-12px', marginBottom: '8px', textAlign: 'right' }}>
               <a
                 href={formData.url}
@@ -140,6 +155,21 @@ export const TaskModal = ({ task, onClose }) => {
             </div>
           )}
 
+          {/* 4. OOO CHECKBOX (Moved to Bottom) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+            <input
+              id="is-ooo"
+              type="checkbox"
+              checked={formData.isOOO}
+              onChange={toggleOOO}
+              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+            />
+            <label htmlFor="is-ooo" style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+              Mark as Out of Office <Plane size={14} />
+            </label>
+          </div>
+
+          {/* 5. BUTTONS */}
           <S.ButtonRow>
             <S.Button variant="danger" onClick={handleDelete}>Delete</S.Button>
             <S.Button variant="primary" onClick={handleSave}>Save Changes</S.Button>

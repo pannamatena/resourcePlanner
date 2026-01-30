@@ -324,7 +324,59 @@ export const MemberRole = styled.div`
 export const ActionBtnGroup = styled.div` display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; `;
 export const ActionBtn = styled.button` background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: ${props => props.color || '#64748b'}; &:hover { background-color: ${props => props.hoverBg || '#f1f5f9'}; color: ${props => props.hoverColor || '#0f172a'}; } `;
 export const AddMemberBtn = styled.button` margin: 16px; padding: 8px; border: 1px dashed #cbd5e1; background: white; color: #64748b; border-radius: 6px; cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; &:hover { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; } `;
-export const TaskBar = styled.div` position: absolute; top: 12px; bottom: 12px; border-radius: 6px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border: 1px solid; cursor: grab; display: flex; align-items: center; padding: 0 8px; overflow: hidden; font-size: 0.75rem; font-weight: 500; white-space: nowrap; left: calc(${props => props.startIndex * DAY_WIDTH}px + 2px); width: calc(${props => props.duration * DAY_WIDTH}px - 4px); display: ${props => props.isHidden ? 'none' : 'flex'}; background-color: ${props => props.color ? props.color.bg : '#e0e7ff'}; border-color: ${props => props.color ? props.color.main : '#818cf8'}; color: ${props => props.color ? props.color.main : '#3730a3'}; z-index: 5; &:hover { filter: brightness(0.96); z-index: 6; } &:active { cursor: grabbing; } `;
+
+export const TaskBar = styled.div`
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  overflow: hidden;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  
+  /* Positioning */
+  left: calc(${props => props.startIndex * DAY_WIDTH}px + 2px);
+  width: calc(${props => props.duration * DAY_WIDTH}px - 4px);
+  display: ${props => props.isHidden ? 'none' : 'flex'};
+  z-index: 5;
+
+  /* --- DYNAMIC STYLING --- */
+  ${props => props.isOOO ? `
+    /* Out of Office Style: Diagonal Stripes */
+    background-image: repeating-linear-gradient(
+      45deg,
+      #f8fafc,
+      #f8fafc 10px,
+      #e2e8f0 10px,
+      #e2e8f0 20px
+    );
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: #64748b;
+    font-style: italic;
+  ` : `
+    /* Standard Task Style */
+    background-color: ${props.color ? props.color.bg : '#e0e7ff'};
+    border-color: ${props.color ? props.color.main : '#818cf8'};
+    color: ${props.color ? props.color.main : '#3730a3'};
+  `}
+
+  &:hover {
+    filter: brightness(0.96);
+    z-index: 6;
+  }
+  
+  &:active {
+    cursor: grabbing;
+  }
+`;
 export const ResizeHandle = styled.div` position: absolute; right: 0; top: 0; bottom: 0; width: 12px; cursor: col-resize; z-index: 20; display: flex; align-items: center; justify-content: center; &:hover { background-color: rgba(0,0,0,0.05); } &::after { content: ''; height: 12px; width: 2px; border-left: 2px dotted rgba(0,0,0,0.2); } `;
 export const ModalOverlay = styled.div` position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 50; `;
 export const ModalContent = styled.div` background: white; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); width: 384px; padding: 24px; `;

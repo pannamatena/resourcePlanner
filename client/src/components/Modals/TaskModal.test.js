@@ -59,4 +59,23 @@ describe('TaskModal Logic', () => {
     // Compare the input value to the calculated date string
     expect(endInput.value).toBe(expectedEndDate);
   });
+
+  test('Selecting Out of Office saves the isOOO flag and auto-fills title', () => {
+    const task = { id: 1, title: '', startIdx: 0, duration: 1 };
+
+    render(<TaskModal task={task} onClose={() => {}} />);
+
+    // Find and click the checkbox
+    const oooCheckbox = screen.getByLabelText(/Mark as Out of Office/i);
+    fireEvent.click(oooCheckbox);
+
+    // Save
+    fireEvent.click(screen.getByText('Save Changes'));
+
+    // Verify 'isOOO' is true AND title became 'OOO'
+    expect(mockActions.updateTask).toHaveBeenCalledWith(expect.objectContaining({
+      isOOO: true,
+      title: 'OOO'
+    }));
+  });
 });
