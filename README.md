@@ -53,9 +53,8 @@ client/src/
 ├── components/
 │   ├── Header/          # Controls for Date Range, Import/Export, and Legend
 │   ├── Modals/          # Forms for Adding/Editing Tasks and Members
-│   ├── Sidebar/         # Sticky left column listing team members
 │   ├── Timeline/        # The interactive grid (Rows, Cells, Headers)
-│   └── PlannerGrid.js   # Main layout combining Sidebar and Timeline
+│   └── PlannerGrid.js   # Main layout combining members and Timeline
 ├── context/
 │   └── PlannerContext.js # Global state (Tasks, Team, ViewRange) and Actions
 ├── hooks/
@@ -72,9 +71,9 @@ client/src/
 
 **Custom Hooks:** The Drag-and-Drop logic (useTaskDrag) is isolated from the UI components to keep the rendering logic clean and performant.
 
-**CSS Grid:** The main layout uses CSS Grid to ensure the Sidebar and Timeline rows stay perfectly aligned, even when scrolling vertically.
+**CSS Grid:** The main layout uses CSS Grid to ensure the members and Timeline rows stay perfectly aligned, even when scrolling vertically.
 
-**Sticky Positioning:** The Timeline Header and Sidebar Column use position: sticky to remain visible while scrolling through large date ranges.
+**Sticky Positioning:** The Timeline Header uses position: sticky to remain visible while scrolling through large date ranges.
 
 ### Technologies Used
 React 19: Core framework.
