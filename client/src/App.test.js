@@ -60,9 +60,8 @@ describe('App Integration', () => {
     // Ensure Dan exists (from initial data)
     expect(screen.getByText('Dan')).toBeTruthy();
 
-    // Find all delete buttons in the sidebar
-    // We select the last button in the .actions div
-    const deleteButtons = document.querySelectorAll('.actions button:last-child');
+    // Find all delete buttons by their title attribute
+    const deleteButtons = screen.getAllByTitle('Delete');
 
     // Click the first one (Dan's row)
     fireEvent.click(deleteButtons[0]);

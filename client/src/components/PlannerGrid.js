@@ -41,6 +41,12 @@ export const PlannerGrid = ({ onEditMember, onAddMember, onEditTask, onAddTask }
                 </S.MemberInfo>
               </div>
               <S.ActionBtnGroup className="actions">
+                <S.ActionBtn title="Edit" hoverBg="#e0e7ff" hoverColor="#4f46e5" onClick={() => onEditMember(member)}>
+                  <Pencil size={14} />
+                </S.ActionBtn>
+                <S.ActionBtn title="Delete" hoverBg="#fee2e2" hoverColor="#ef4444" onClick={() => handleDeleteMember(member.id)}>
+                  <Trash2 size={14} />
+                </S.ActionBtn>
                 <S.ActionBtn
                   onClick={() => actions.moveMember(member.id, 'up')}
                   disabled={isFirst}
@@ -57,12 +63,6 @@ export const PlannerGrid = ({ onEditMember, onAddMember, onEditTask, onAddTask }
                   title="Move Down"
                 >
                   <ArrowDown size={14} />
-                </S.ActionBtn>
-                <S.ActionBtn hoverBg="#e0e7ff" hoverColor="#4f46e5" onClick={() => onEditMember(member)}>
-                  <Pencil size={14} />
-                </S.ActionBtn>
-                <S.ActionBtn hoverBg="#fee2e2" hoverColor="#ef4444" onClick={() => handleDeleteMember(member.id)}>
-                  <Trash2 size={14} />
                 </S.ActionBtn>
               </S.ActionBtnGroup>
             </S.SidebarCell>

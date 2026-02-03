@@ -321,7 +321,7 @@ export const MemberRole = styled.div`
 `;
 
 /* ... Rest of the components ... */
-export const ActionBtnGroup = styled.div` display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; `;
+export const ActionBtnGroup = styled.div` display: grid; grid-template-columns: repeat(2, auto); gap: 2px; opacity: 0; transition: opacity 0.2s; `;
 export const ActionBtn = styled.button` background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: ${props => props.color || '#64748b'}; &:hover { background-color: ${props => props.hoverBg || '#f1f5f9'}; color: ${props => props.hoverColor || '#0f172a'}; } `;
 export const AddMemberBtn = styled.button` margin: 16px; padding: 8px; border: 1px dashed #cbd5e1; background: white; color: #64748b; border-radius: 6px; cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; &:hover { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; } `;
 
