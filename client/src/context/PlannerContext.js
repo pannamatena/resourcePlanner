@@ -50,6 +50,25 @@ export const PlannerProvider = ({ children }) => {
     setTasks(prev => prev.filter(t => t.resourceId !== id));
   };
 
+  const moveMember = (id, direction) => {
+    setTeam(prev => {
+      const index = prev.findIndex(m => m.id === id);
+      if (index < 0) return prev;
+
+      // Prevent moving out of bounds
+      if (direction === 'up' && index === 0) return prev;
+      if (direction === 'down' && index === prev.length - 1) return prev;
+
+      const newTeam = [...prev];
+      const swapIndex = direction === 'up' ? index - 1 : index + 1;
+
+      // Swap elements
+      [newTeam[index], newTeam[swapIndex]] = [newTeam[swapIndex], newTeam[index]];
+
+      return newTeam;
+    });
+  };
+
   const addTask = (newTask) => setTasks(prev => [...prev, newTask]);
 
   // --- FIXED: Merge updates instead of replacing ---
@@ -72,7 +91,7 @@ export const PlannerProvider = ({ children }) => {
     tasks,
     today,
     setViewRange,
-    actions: { addMember, updateMember, deleteMember, addTask, updateTask, deleteTask, importData }
+    actions: { addMember, updateMember, deleteMember, moveMember, addTask, updateTask, deleteTask, importData }
   };
 
   return <PlannerContext.Provider value={value}>{children}</PlannerContext.Provider>;

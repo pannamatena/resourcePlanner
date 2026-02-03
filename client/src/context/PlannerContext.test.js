@@ -77,4 +77,45 @@ describe('PlannerContext', () => {
     // Title should REMAIN (This confirms the merge logic works)
     expect(screen.getByTestId('task-title')).toHaveTextContent('Original Title');
   });
+
+  // ... imports
+
+  const OrderTestComponent = () => {
+    const { team, actions } = usePlanner();
+    return (
+      <div>
+        <ul data-testid="team-list">
+          {team.map(m => <li key={m.id}>{m.name}</li>)}
+        </ul>
+        <button onClick={() => actions.moveMember(team[0].id, 'down')}>Move Down</button>
+      </div>
+    );
+  };
+
+  test('moveMember reorders the team', () => {
+    // Initial State usually has names. Let's assume [Alice, Bob] style order
+    // You might need to check your INITIAL_TEAM in constants.js to know what names to expect.
+    // Or clear storage and add manually.
+    localStorage.clear();
+
+    render(
+      <PlannerProvider>
+        <OrderTestComponent />
+      </PlannerProvider>
+    );
+
+    const list = screen.getByTestId('team-list');
+    const moveBtn = screen.getByText('Move Down');
+
+    // Get initial first item
+    const initialFirst = list.children[0].textContent;
+    const initialSecond = list.children[1].textContent;
+
+    // Move first item DOWN
+    act(() => { moveBtn.click(); });
+
+    // Verify positions swapped
+    expect(list.children[0].textContent).toBe(initialSecond);
+    expect(list.children[1].textContent).toBe(initialFirst);
+  });
 });
