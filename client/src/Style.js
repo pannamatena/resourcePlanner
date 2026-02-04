@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
 
-export const DAY_WIDTH = 40;
+export const getDayWidth = (props) => (props.isCondensed ? 12 : 40);
 
 // GLOBAL RESET for this component's children to prevent layout math errors
 export const Container = styled.div`
@@ -191,7 +191,7 @@ export const TodayLabel = styled.span`
 `;
 
 export const DayHeaderCell = styled.div`
-  width: ${DAY_WIDTH}px;
+  width: ${getDayWidth}px;
   flex-shrink: 0;
   border-right: 1px solid #e2e8f0;
   display: flex;
@@ -249,7 +249,7 @@ export const DayHeaderCell = styled.div`
 `;
 
 export const GridCell = styled.div`
-  width: ${DAY_WIDTH}px;
+  width: ${getDayWidth}px;
   flex-shrink: 0;
   border-right: 1px solid #f1f5f9;
   cursor: pointer;
@@ -342,8 +342,8 @@ export const TaskBar = styled.div`
   white-space: nowrap;
   
   /* Positioning */
-  left: calc(${props => props.startIndex * DAY_WIDTH}px + 2px);
-  width: calc(${props => props.duration * DAY_WIDTH}px - 4px);
+  left: calc(${props => props.startIndex * getDayWidth(props)}px + 2px);
+  width: calc(${props => props.duration * getDayWidth(props)}px - 4px);
   display: ${props => props.isHidden ? 'none' : 'flex'};
   z-index: 5;
 

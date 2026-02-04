@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Download, Upload, Calendar } from 'lucide-react';
+import { Download, Upload, Calendar, Minimize2 } from 'lucide-react';
 import { usePlanner } from '../../context/PlannerContext';
 import * as S from '../../Style'; // Adjust path to where you kept Style.js
 
@@ -9,7 +9,8 @@ export const Header = () => {
     setViewRange,
     team,
     tasks,
-    actions
+    actions,
+    isCondensed
   } = usePlanner();
 
   const fileInputRef = useRef(null);
@@ -83,6 +84,9 @@ export const Header = () => {
         </S.DateRangePicker>
 
         <S.ButtonGroup>
+          <S.HeaderBtn onClick={actions.toggleCondensedView} style={{ background: isCondensed ? '#e0e7ff' : 'white' }}>
+            <Minimize2 size={16} />{isCondensed ? 'Normal View' : 'Condensed View'}
+          </S.HeaderBtn>
           <S.HeaderBtn onClick={handleExport}>
             <Download size={16} /> Export
           </S.HeaderBtn>

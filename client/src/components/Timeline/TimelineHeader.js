@@ -4,7 +4,7 @@ import { getSprintInfo, getHolidayType, formatDate, isSameDay } from '../../util
 import * as S from '../../Style';
 
 export const TimelineHeader = () => {
-  const { dates, totalDays, today } = usePlanner();
+  const { dates, totalDays, today, isCondensed } = usePlanner();
 
   return (
     <S.TimelineHeader totalDays={totalDays}>
@@ -18,15 +18,24 @@ export const TimelineHeader = () => {
           <S.DayHeaderCell
             key={index}
             isSprintStart={isSprintStart}
-            sprintLabel={label}
+            sprintLabel={isCondensed ? '' : label}
             isWeekend={isWeekend}
             holidayType={holidayType}
             isToday={isToday}
+            isCondensed={isCondensed}
           >
-            {/* NEW: Today Label */}
-            {isToday && <S.TodayLabel>Today</S.TodayLabel>}
+            {/* Today Label */}
+            {isToday && !isCondensed && <S.TodayLabel>Today</S.TodayLabel>}
 
-            <span>{isSprintStart ? formatDate(date) : date.getDate()}</span>
+            {/* Normal View: Show Day/Date */}
+            {!isCondensed && <span>{isSprintStart ? formatDate(date) : date.getDate()}</span>}
+
+            {/* Condensed View: Show only Sprint Start Date */}
+            {isCondensed && isSprintStart && (
+              <span style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', fontSize: '0.6rem', fontWeight: 'bold', marginTop: '4px' }}>
+                {formatDate(date)}
+              </span>
+            )}
           </S.DayHeaderCell>
         );
       })}

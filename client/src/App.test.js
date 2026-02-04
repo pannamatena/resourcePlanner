@@ -8,6 +8,8 @@ window.HTMLElement.prototype.scrollIntoView = function() {};
 describe('App Integration', () => {
   beforeEach(() => {
     localStorage.clear();
+    // Restore mock timers
+    jest.useRealTimers();
   });
 
   test('renders header and resource planner title', () => {
@@ -27,22 +29,18 @@ describe('App Integration', () => {
     render(<App />);
 
     // 1. Open Modal
-    // We use getAllByText to handle cases where multiple might exist,
-    // but initially, the sidebar button is usually the first/only one.
     const sidebarBtns = screen.getAllByText('Add Member');
     fireEvent.click(sidebarBtns[0]);
 
     // 2. Fill Form
     const inputs = screen.getAllByRole('textbox');
-    const nameInput = inputs[0]; // Name is first input
-    const roleInput = inputs[1]; // Role is second input
+    const nameInput = inputs[0];
+    const roleInput = inputs[1];
 
     fireEvent.change(nameInput, { target: { value: 'John Doe' } });
     fireEvent.change(roleInput, { target: { value: 'Developer' } });
 
     // 3. Click Save
-    // Now that the modal is open, there are TWO "Add Member" buttons.
-    // The Sidebar button is index 0. The Modal button is index 1 (rendered last).
     const allAddBtns = screen.getAllByText('Add Member');
     const modalSaveBtn = allAddBtns[allAddBtns.length - 1];
 
@@ -57,18 +55,42 @@ describe('App Integration', () => {
     window.confirm = jest.fn(() => true);
     render(<App />);
 
-    // Ensure Dan exists (from initial data)
     expect(screen.getByText('Dan')).toBeTruthy();
-
-    // Find all delete buttons by their title attribute
     const deleteButtons = screen.getAllByTitle('Delete');
-
-    // Click the first one (Dan's row)
     fireEvent.click(deleteButtons[0]);
 
     expect(window.confirm).toHaveBeenCalled();
-
-    // Verify Dan is gone (queryByText returns null if not found)
     expect(screen.queryByText('Dan')).toBeNull();
+  });
+
+  test('toggles condensed view and adjusts UI accordingly', () => {
+    // Set a fixed date to ensure the "Auth Service" task is visible
+    jest.useFakeTimers().setSystemTime(new Date('2026-01-10'));
+
+    render(<App />);
+
+    const condensedBtn = screen.getByText('Condensed View');
+    const taskTitle = screen.getByText('Auth Service');
+
+    // Verify normal view
+    expect(condensedBtn.textContent).toBe('Condensed View');
+    expect(taskTitle).toBeVisible();
+    // Check for day numbers (there will be multiple '9's in a quarter)
+    expect(screen.queryAllByText('9').length).toBeGreaterThan(0);
+    // Check for a sprint start date format
+    expect(screen.getByText('Jan 8')).toBeInTheDocument();
+
+    // Switch to condensed view
+    fireEvent.click(condensedBtn);
+
+    // Verify condensed view
+    expect(condensedBtn.textContent).toBe('Normal View');
+    expect(taskTitle).toBeVisible();
+    // Day numbers should be hidden
+    expect(screen.queryAllByText('9').length).toBe(0);
+    // Sprint start date should still be visible, but now vertically
+    const sprintDate = screen.getByText('Jan 8');
+    expect(sprintDate).toBeVisible();
+    expect(sprintDate).toHaveStyle('writing-mode: vertical-rl');
   });
 });

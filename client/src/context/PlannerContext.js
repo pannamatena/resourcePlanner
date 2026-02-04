@@ -7,6 +7,7 @@ const PlannerContext = createContext();
 
 export const PlannerProvider = ({ children }) => {
   const [viewRange, setViewRange] = useState(getCurrentQuarter());
+  const [isCondensed, setIsCondensed] = useState(false);
 
   // --- NEW: Track "Today" automatically ---
   const [today, setToday] = useState(new Date());
@@ -83,6 +84,8 @@ export const PlannerProvider = ({ children }) => {
     setTasks(importedTasks);
   };
 
+  const toggleCondensedView = () => setIsCondensed(prev => !prev);
+
   const value = {
     viewRange,
     dates,
@@ -90,8 +93,9 @@ export const PlannerProvider = ({ children }) => {
     team,
     tasks,
     today,
+    isCondensed,
     setViewRange,
-    actions: { addMember, updateMember, deleteMember, moveMember, addTask, updateTask, deleteTask, importData }
+    actions: { addMember, updateMember, deleteMember, moveMember, addTask, updateTask, deleteTask, importData, toggleCondensedView }
   };
 
   return <PlannerContext.Provider value={value}>{children}</PlannerContext.Provider>;

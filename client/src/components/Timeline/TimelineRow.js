@@ -6,7 +6,7 @@ import { getSprintInfo, getHolidayType, getViewIndexFromStorageIndex, isSameDay 
 import * as S from '../../Style';
 
 export const TimelineRow = ({ member, onEditTask, onAddTask }) => {
-  const { dates, tasks, totalDays, viewRange, today } = usePlanner();
+  const { dates, tasks, totalDays, viewRange, today, isCondensed } = usePlanner();
   // Destructure the Ref here
   const { onDragStart, onDragOver, onDropRow, onResizeStart, isResizingRef } = useTaskDrag();
 
@@ -37,6 +37,7 @@ export const TimelineRow = ({ member, onEditTask, onAddTask }) => {
             isWeekend={isWeekend}
             holidayType={holidayType}
             isToday={isToday}
+            isCondensed={isCondensed}
             onClick={() => handleCellClick(index)}
           />
         );
@@ -49,10 +50,12 @@ export const TimelineRow = ({ member, onEditTask, onAddTask }) => {
         return (
           <S.TaskBar
             key={task.id}
+            title={task.title}
             startIndex={viewStartIndex}
             duration={task.duration}
             color={member.color}
             isOOO={task.isOOO} // <--- PASS THE PROP
+            isCondensed={isCondensed}
             onClick={(e) => {
               e.stopPropagation();
               if(!isResizingRef.current) onEditTask(task);
@@ -62,7 +65,7 @@ export const TimelineRow = ({ member, onEditTask, onAddTask }) => {
           >
             <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</div>
             {/* Only show Link icon if it's NOT OOO and has a URL */}
-            {!task.isOOO && task.url && <LinkIcon size={12} style={{ marginLeft: 4, opacity: 0.5 }} />}
+            {!isCondensed && !task.isOOO && task.url && <LinkIcon size={12} style={{ marginLeft: 4, opacity: 0.5 }} />}
             <S.ResizeHandle onMouseDown={(e) => onResizeStart(e, task)} />
           </S.TaskBar>
         );
