@@ -60,6 +60,22 @@ describe('TaskModal Logic', () => {
     expect(endInput.value).toBe(expectedEndDate);
   });
 
+  test('Checking OOO checkbox updates title field in real-time', () => {
+    const task = { id: 1, title: 'Original Title', startIdx: 0, duration: 1 };
+    render(<TaskModal task={task} onClose={() => {}} />);
+
+    const titleInput = screen.getByLabelText('Task Title');
+    const oooCheckbox = screen.getByLabelText(/Mark as Out of Office/i);
+
+    // 1. Check the box
+    fireEvent.click(oooCheckbox);
+    expect(titleInput.value).toBe('OOO');
+
+    // 2. Uncheck the box
+    fireEvent.click(oooCheckbox);
+    expect(titleInput.value).toBe('');
+  });
+
   test('Selecting Out of Office saves the isOOO flag and auto-fills title', () => {
     const task = { id: 1, title: '', startIdx: 0, duration: 1 };
 

@@ -96,7 +96,7 @@ export const TaskModal = ({ task, onClose }) => {
     setFormData(prev => ({
       ...prev,
       isOOO: isChecked,
-      title: (isChecked && !prev.title) ? 'OOO' : prev.title
+      title: isChecked ? 'OOO' : ''
     }));
   };
 
