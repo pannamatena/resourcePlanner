@@ -331,7 +331,7 @@ export const TaskBar = styled.div`
   bottom: 12px;
   border-radius: 6px;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  border: 1px solid;
+  border: 1px solid transparent; /* No border needed for high-contrast */
   cursor: grab;
   display: flex;
   align-items: center;
@@ -363,13 +363,12 @@ export const TaskBar = styled.div`
     font-style: italic;
   ` : `
     /* Standard Task Style */
-    background-color: ${props.color ? props.color.bg : '#e0e7ff'};
-    border-color: ${props.color ? props.color.main : '#818cf8'};
-    color: ${props.color ? props.color.main : '#3730a3'};
+    background-color: ${props.color ? props.color.main : '#6366f1'};
+    color: ${props.color ? props.color.text : '#e0e7ff'};
   `}
 
   &:hover {
-    filter: brightness(0.96);
+    filter: brightness(1.1); /* Brighten on hover */
     z-index: 6;
   }
   
@@ -377,12 +376,12 @@ export const TaskBar = styled.div`
     cursor: grabbing;
   }
 `;
-export const ResizeHandle = styled.div` position: absolute; right: 0; top: 0; bottom: 0; width: 12px; cursor: col-resize; z-index: 20; display: flex; align-items: center; justify-content: center; &:hover { background-color: rgba(0,0,0,0.05); } &::after { content: ''; height: 12px; width: 2px; border-left: 2px dotted rgba(0,0,0,0.2); } `;
+export const ResizeHandle = styled.div` position: absolute; right: 0; top: 0; bottom: 0; width: 12px; cursor: col-resize; z-index: 20; display: flex; align-items: center; justify-content: center; &:hover { background-color: rgba(0,0,0,0.05); } &::after { content: ''; height: 12px; width: 2px; border-left: 2px dotted rgba(255,255,255,0.5); } `;
 export const ModalOverlay = styled.div` position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 50; `;
 export const ModalContent = styled.div` background: white; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); width: 384px; padding: 24px; `;
 export const ModalHeader = styled.div` display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; h3 { font-size: 1.125rem; font-weight: 700; margin: 0; } button { background: none; border: none; cursor: pointer; color: #94a3b8; &:hover { color: #475569; } } `;
 export const InputGroup = styled.div` margin-bottom: 16px; label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; } input, select { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; font-size: 0.875rem; box-sizing: border-box; } `;
 export const ButtonRow = styled.div` display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 16px; `;
 export const Button = styled.button` padding: 8px 16px; border-radius: 4px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; ${props => props.variant === 'danger' && `color: #ef4444; background: none; &:hover { color: #b91c1c; }`} ${props => props.variant === 'primary' && `background-color: #4f46e5; color: white; &:hover { background-color: #4338ca; }`} `;
-export const ColorSwatchContainer = styled.div` display: flex; gap: 8px; `;
+export const ColorSwatchContainer = styled.div` display: flex; gap: 8px; flex-wrap: wrap;`;
 export const ColorSwatch = styled.div` width: 24px; height: 24px; border-radius: 50%; background-color: ${props => props.color}; cursor: pointer; border: 2px solid ${props => props.isSelected ? '#1e293b' : 'transparent'}; &:hover { transform: scale(1.1); } `;

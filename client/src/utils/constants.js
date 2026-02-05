@@ -6,13 +6,20 @@ export const DAY_WIDTH = 40;
 export const ANCHOR_DATE = new Date('2026-01-08T00:00:00');
 
 export const COLOR_THEMES = [
-  { name: 'Purple',  bg: '#ce9df7', main: '#8a4baf' },
-  { name: 'Blue',    bg: '#8cb5f7', main: '#4275d6' },
-  { name: 'Green',   bg: '#7fe0a2', main: '#40895e' },
-  { name: 'Sky',     bg: '#8bd9f5', main: '#3f7e9e' },
-  { name: 'Amber',   bg: '#efdf6b', main: '#b06929' },
-  { name: 'Red',     bg: '#ec8b82', main: '#bf463a' },
-  { name: 'Gray',    bg: '#9398a0', main: '#646871' },
+  { name: 'Purple',  text: '#f9eeff', main: '#C97CF4' },
+  { name: 'Dark Purple',  text: '#f9eeff', main: '#8b5cf6' },
+  { name: 'Blue',    text: '#e5f6ff', main: '#669DF1' },
+  { name: 'Dark Blue',    text: '#e5f6ff', main: '#1868DB' },
+  { name: 'Green',   text: '#f1fff4', main: '#4BCE97' },
+  { name: 'Dark Green',   text: '#f1fff4', main: '#1F845A' },
+  { name: 'Teal',     text: '#cdefff', main: '#6CC3E0' },
+  { name: 'Dark Teal',     text: '#cdefff', main: '#227D9B' },
+  { name: 'Yellow',   text: '#322905', main: '#EED12B' },
+  { name: 'Dark Yellow',   text: '#fff4e7', main: '#BD5B00' },
+  { name: 'Red',     text: '#ffe3e3', main: '#F87168' },
+  { name: 'Dark Red',     text: '#ffe3e3', main: '#C9372C' },
+  { name: 'Gray',  text: '#e1e1e1', main: '#8C8F97' },
+  { name: 'Dark Gray',  text: '#e1e1e1', main: '#6B6E76' },
 ];
 
 export const INITIAL_TEAM = [
