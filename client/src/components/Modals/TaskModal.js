@@ -102,9 +102,13 @@ export const TaskModal = ({ task, onClose }) => {
 
   if (!task) return null;
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) handleSave();
+  };
+
   return (
     <S.ModalOverlay onClick={onClose}>
-      <S.ModalContent onClick={e => e.stopPropagation()}>
+      <S.ModalContent onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
         <S.ModalHeader>
           <h3>{task._isNew ? 'Add Task' : 'Edit Task'}</h3>
           <button onClick={onClose}><X size={20} /></button>

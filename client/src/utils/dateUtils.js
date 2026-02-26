@@ -81,7 +81,11 @@ export const getViewIndexFromStorageIndex = (viewStartDate, storageIdx) => {
 export const getDateStringFromStorageIndex = (idx) => {
   const d = new Date(ANCHOR_DATE);
   d.setDate(d.getDate() + idx);
-  return toISODate(d);
+  // Use local date components to avoid UTC offset shifting the date in UTC+ timezones
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 export const getStorageIndexFromDateString = (dateStr) => {
