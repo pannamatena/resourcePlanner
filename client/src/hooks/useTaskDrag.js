@@ -4,7 +4,8 @@ import { DAY_WIDTH } from '../utils/constants'; // Adjusted path if needed
 import { getStorageIndexFromViewIndex } from '../utils/dateUtils';
 
 export const useTaskDrag = () => {
-  const { viewRange, actions } = usePlanner();
+  const { viewRange, actions, isCondensed } = usePlanner();
+  const dayWidth = isCondensed ? 12 : DAY_WIDTH;
 
   // Resize State
   const [resizingTask, setResizingTask] = useState(null);
@@ -18,7 +19,7 @@ export const useTaskDrag = () => {
     }
     e.dataTransfer.setData('taskId', task.id);
     const rect = e.target.getBoundingClientRect();
-    const clickOffset = Math.floor((e.clientX - rect.left) / DAY_WIDTH);
+    const clickOffset = Math.floor((e.clientX - rect.left) / dayWidth);
     e.dataTransfer.setData('clickOffset', clickOffset);
   };
 
@@ -35,7 +36,7 @@ export const useTaskDrag = () => {
     const clickOffset = parseInt(e.dataTransfer.getData('clickOffset'));
     const rowRect = e.currentTarget.getBoundingClientRect();
     const dropPixelX = e.clientX - rowRect.left;
-    const dropViewIndex = Math.floor(dropPixelX / DAY_WIDTH);
+    const dropViewIndex = Math.floor(dropPixelX / dayWidth);
     const newStartViewIndex = dropViewIndex - clickOffset;
     const newStorageIdx = getStorageIndexFromViewIndex(viewRange.start, newStartViewIndex);
 
@@ -59,7 +60,7 @@ export const useTaskDrag = () => {
       if (!resizingTask) return;
 
       const deltaPixels = e.clientX - resizingTask.initialX;
-      const deltaDays = Math.round(deltaPixels / DAY_WIDTH);
+      const deltaDays = Math.round(deltaPixels / dayWidth);
       let newDuration = resizingTask.initialDuration + deltaDays;
       if (newDuration < 1) newDuration = 1;
 
